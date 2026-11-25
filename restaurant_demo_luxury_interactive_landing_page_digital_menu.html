@@ -1,0 +1,3179 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Restaurant Demo — Modern Japanese Dining &amp; Seasonal Digital Menu</title>
+
+  <!-- Google Fonts: Playfair Display (Fine-Dining Editorial Serif) + Plus Jakarta Sans & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Tailwind Design Tokens Configuration -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+            body: ['Inter', '"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            slatebase: '#14171c',
+            obsidian: '#0d0f13',
+            charcoal: '#1c2028',
+            coral: {
+              DEFAULT: '#ef4f27',
+              hover: '#d83e18',
+              soft: '#fff2ee',
+            },
+          },
+          boxShadow: {
+            'card-soft': '0 16px 40px -14px rgba(20, 23, 28, 0.08)',
+            'card-elevated': '0 26px 54px -16px rgba(20, 23, 28, 0.14)',
+            'card-coral': '0 28px 56px -14px rgba(239, 79, 39, 0.42)',
+            'bar-float': '0 24px 56px -18px rgba(13, 15, 19, 0.18)',
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- Luxury Motion & Card Interactivity Stylesheet -->
+  <style>
+    :root {
+      --ease-luxury: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* ===================================================================== */
+    /* 1. DELAYED VIEWPORT REVEAL SYSTEM (SEPARATE FROM LERP MOTION LAYER)   */
+    /*    Elements wait patiently until scrolled well into the reading zone  */
+    /* ===================================================================== */
+    .reveal-wrap {
+      opacity: 0;
+      transform: translate3d(0, 46px, 0) scale(0.975);
+      filter: blur(4px);
+      will-change: opacity, transform, filter;
+      transition:
+        opacity 1.3s var(--ease-luxury),
+        transform 1.35s var(--ease-luxury),
+        filter 1.25s var(--ease-luxury);
+    }
+
+    .reveal-wrap.reveal-heading {
+      transform: translate3d(0, 34px, 0) scale(0.985);
+      transition:
+        opacity 1.2s var(--ease-luxury),
+        transform 1.25s var(--ease-luxury),
+        filter 1.15s var(--ease-luxury);
+    }
+
+    .reveal-wrap.is-revealed {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+      filter: blur(0px);
+    }
+
+    /* Calm Initial Hero Entrance Choreography (1.3s - 1.6s) */
+    .hero-reveal {
+      opacity: 0;
+      transform: translate3d(0, 32px, 0);
+      filter: blur(4px);
+      transition:
+        opacity 1.35s var(--ease-luxury),
+        transform 1.45s var(--ease-luxury),
+        filter 1.3s var(--ease-luxury);
+    }
+    .hero-reveal.hero-platter-enter {
+      transform: translate3d(0, 42px, 0) scale(0.96);
+      transition:
+        opacity 1.55s var(--ease-luxury),
+        transform 1.65s var(--ease-luxury),
+        filter 1.45s var(--ease-luxury);
+    }
+    .hero-ready .hero-reveal {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+      filter: blur(0px);
+    }
+
+    /* ===================================================================== */
+    /* 2. CALM ARCHITECTURAL CARD PHYSICS (DRIVEN BY SILKY LERP LOOP)        */
+    /* ===================================================================== */
+    .luxury-card {
+      position: relative;
+      transform-style: preserve-3d;
+      will-change: transform;
+      touch-action: pan-y;
+      -webkit-tap-highlight-color: transparent;
+      transition:
+        background-color 0.65s var(--ease-luxury),
+        color 0.55s var(--ease-luxury),
+        border-color 0.6s var(--ease-luxury),
+        box-shadow 0.7s var(--ease-luxury);
+    }
+
+    /* Inner Press Shell (Calm 280ms tactile compression without fighting LERP) */
+    .card-press-shell {
+      height: 100%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-radius: inherit;
+      transition: transform 0.28s var(--ease-luxury);
+      transform-style: preserve-3d;
+    }
+    .luxury-card.is-pressed .card-press-shell {
+      transform: scale(0.985);
+    }
+
+    /* Calm Editorial Photo Zoom inside Image Cards */
+    .luxury-card .card-photo-zoom {
+      transition: transform 1.15s var(--ease-luxury);
+      will-change: transform;
+    }
+    .luxury-card:hover .card-photo-zoom,
+    .luxury-card.is-interacting .card-photo-zoom {
+      transform: scale(1.055);
+    }
+
+    /* Soft Warm Specular Sheen Gliding Smoothly Across Card Surface */
+    .card-sheen {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 14;
+    }
+    .card-sheen::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: var(--sheen-opacity, 0);
+      background: radial-gradient(
+        circle 260px at var(--sheen-x, 50%) var(--sheen-y, 50%),
+        rgba(255, 248, 240, 0.22) 0%,
+        rgba(255, 244, 232, 0.06) 46%,
+        transparent 74%
+      );
+      transition: opacity 0.65s var(--ease-luxury);
+    }
+
+    /* Calm Slow-Expanding Touch Ripple (900ms) */
+    .card-ripple-layer {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 15;
+    }
+    .card-ripple-wave {
+      position: absolute;
+      border-radius: 9999px;
+      transform: translate(-50%, -50%) scale(0);
+      background: rgba(239, 79, 39, 0.14);
+      animation: calmRippleExpand 0.9s var(--ease-luxury) forwards;
+      pointer-events: none;
+    }
+    .menu-card--active .card-ripple-wave,
+    .ripple-light .card-ripple-wave {
+      background: rgba(255, 255, 255, 0.26);
+    }
+    @keyframes calmRippleExpand {
+      0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0.9;
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0;
+      }
+    }
+
+    /* ===================================================================== */
+    /* 3. TEMPLATE 2 MENU CARDS & OVERHANGING CIRCULAR PLATE CHOREOGRAPHY    */
+    /* ===================================================================== */
+    .menu-card {
+      background-color: #ffffff;
+      color: #14171c;
+      border: 1px solid #eef0f4;
+      box-shadow: 0 16px 40px -14px rgba(20, 23, 28, 0.08);
+    }
+    .menu-card .menu-divider {
+      border-color: #f1f3f6;
+      transition: border-color 0.55s var(--ease-luxury);
+    }
+    .menu-card .menu-meta {
+      color: #94a3b8;
+      transition: color 0.55s var(--ease-luxury);
+    }
+    .menu-card .menu-plus-btn {
+      background-color: #ef4f27;
+      color: #ffffff;
+      box-shadow: 0 12px 26px -8px rgba(239, 79, 39, 0.42);
+      transition:
+        background-color 0.5s var(--ease-luxury),
+        color 0.5s var(--ease-luxury),
+        transform 0.45s var(--ease-luxury),
+        box-shadow 0.5s var(--ease-luxury);
+    }
+    .menu-card .menu-plus-btn:hover {
+      background-color: #d83e18;
+      transform: scale(1.05);
+    }
+    .menu-card .menu-badge {
+      transition: background-color 0.55s var(--ease-luxury), color 0.55s var(--ease-luxury);
+    }
+    .menu-card .plate-rim {
+      box-shadow:
+        0 20px 38px -10px rgba(13, 15, 19, 0.34),
+        0 6px 16px -4px rgba(13, 15, 19, 0.2),
+        0 0 0 4px #ffffff;
+      transition:
+        box-shadow 0.75s var(--ease-luxury),
+        transform 0.75s var(--ease-luxury);
+    }
+
+    /* Template 2 Signature Highlighted Active Card (Solid Coral-Vermilion #ef4f27) */
+    .menu-card.menu-card--active {
+      background-color: #ef4f27;
+      color: #ffffff;
+      border-color: #ef4f27;
+      box-shadow: 0 28px 56px -14px rgba(239, 79, 39, 0.44);
+    }
+    .menu-card.menu-card--active .menu-divider {
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+    .menu-card.menu-card--active .menu-meta {
+      color: rgba(255, 255, 255, 0.88);
+    }
+    .menu-card.menu-card--active .menu-plus-btn {
+      background-color: #ffffff;
+      color: #ef4f27;
+      box-shadow: 0 12px 26px -8px rgba(13, 15, 19, 0.22);
+    }
+    .menu-card.menu-card--active .menu-plus-btn:hover {
+      background-color: #fff6f3;
+    }
+    .menu-card.menu-card--active .menu-badge {
+      background-color: rgba(255, 255, 255, 0.2) !important;
+      color: #ffffff !important;
+    }
+    .menu-card.menu-card--active .plate-rim {
+      box-shadow:
+        0 26px 46px -10px rgba(13, 15, 19, 0.42),
+        0 8px 20px -4px rgba(13, 15, 19, 0.24),
+        0 0 0 4px rgba(255, 255, 255, 0.35);
+      transform: translate3d(0, -6px, 0) scale(1.045);
+    }
+
+    /* Slow Graceful Plate Lift on Hover/Touch */
+    .menu-card:hover .plate-rim,
+    .menu-card.is-interacting .plate-rim {
+      transform: translate3d(0, -7px, 0) scale(1.045);
+    }
+
+    /* Overhanging Circular Plate Delayed Entrance Wrapper (Un-blurs, floats up, rotates from -12deg) */
+    .plate-reveal-wrap {
+      opacity: 0;
+      filter: blur(3px);
+      transform: translate3d(-50%, 18px, 0) rotate(-12deg) scale(0.92);
+      will-change: opacity, transform, filter;
+      transition:
+        opacity 1.35s var(--ease-luxury),
+        transform 1.35s var(--ease-luxury),
+        filter 1.25s var(--ease-luxury);
+    }
+    .reveal-wrap.is-revealed .plate-reveal-wrap {
+      opacity: 1;
+      filter: blur(0px);
+      transform: translate3d(-50%, 0, 0) rotate(0deg) scale(1);
+    }
+
+    /* Inner Plate Layer driven exclusively by the silky LERP scroll loop */
+    .plate-lerp-layer {
+      width: 100%;
+      height: 100%;
+      will-change: transform;
+    }
+
+    /* ===================================================================== */
+    /* 4. HORIZONTAL SWIPE RAIL CAROUSEL MODE                                */
+    /* ===================================================================== */
+    .menu-rail {
+      display: flex;
+      gap: 1.75rem;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-padding-inline: 1.5rem;
+      -webkit-overflow-scrolling: touch;
+      padding-top: 4.5rem;
+      padding-bottom: 2.5rem;
+      padding-inline: 1.5rem;
+      scrollbar-width: none;
+      cursor: grab;
+    }
+    .menu-rail::-webkit-scrollbar {
+      display: none;
+    }
+    .menu-rail.is-dragging {
+      cursor: grabbing;
+      scroll-snap-type: none;
+      user-select: none;
+    }
+    .menu-rail .reveal-wrap {
+      flex: 0 0 78vw;
+      max-width: 288px;
+      scroll-snap-align: center;
+    }
+    .menu-rail .luxury-card {
+      touch-action: pan-x pan-y;
+    }
+    @media (min-width: 640px) {
+      .menu-rail {
+        padding-inline: max(2rem, calc(50% - 156px));
+      }
+      .menu-rail .reveal-wrap {
+        flex: 0 0 286px;
+      }
+    }
+
+    .no-scrollbar {
+      scrollbar-width: none;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* ===================================================================== */
+    /* 5. OMAKASE SLOW CROSSFADE & DAMPED SWIPE STAGE                        */
+    /* ===================================================================== */
+    #omakaseDragStage {
+      touch-action: pan-y;
+      cursor: grab;
+      will-change: transform;
+    }
+    #omakaseDragStage.is-swiping {
+      cursor: grabbing;
+    }
+    .omakase-fade-target {
+      transition:
+        opacity 0.9s var(--ease-luxury),
+        transform 0.9s var(--ease-luxury),
+        filter 0.85s var(--ease-luxury);
+    }
+    .omakase-fade-target.is-transitioning {
+      opacity: 0.15;
+      transform: translate3d(0, 10px, 0) scale(0.975);
+      filter: blur(3px);
+    }
+
+    /* Subtle Cart Confirmation Breath */
+    @keyframes calmCartGlow {
+      0% { transform: scale(1); }
+      45% { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+    .cart-pulse {
+      animation: calmCartGlow 0.65s var(--ease-luxury);
+    }
+
+    /* ===================================================================== */
+    /* 6. ACCESSIBILITY: GRACEFUL REDUCED MOTION                             */
+    /* ===================================================================== */
+    @media (prefers-reduced-motion: reduce) {
+      .reveal-wrap,
+      .hero-reveal,
+      .plate-reveal-wrap,
+      .luxury-card,
+      .card-press-shell,
+      .plate-lerp-layer,
+      #heroPlatterLerp,
+      #omakaseDragStage,
+      .omakase-fade-target {
+        transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease !important;
+        transform: none !important;
+        opacity: 1 !important;
+        filter: none !important;
+      }
+      .plate-reveal-wrap {
+        transform: translateX(-50%) !important;
+      }
+      #heroPlatterLerp {
+        transform: rotate(-15deg) !important;
+      }
+      .card-sheen,
+      .card-ripple-wave {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="font-sans bg-white text-slatebase antialiased selection:bg-coral selection:text-white overflow-x-hidden">
+
+  <!-- ===================================================================== -->
+  <!-- TOP UTILITY STRIP (Template 1 Minimal Dark Bar)                       -->
+  <!-- ===================================================================== -->
+  <div class="bg-obsidian text-slate-400 text-[11px] border-b border-white/[0.06]">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-2 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-4 sm:gap-6 truncate">
+        <span class="inline-flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-coral shrink-0"></span>
+          <span>418 Mercer St, SoHo • New York</span>
+        </span>
+        <span class="hidden sm:inline text-slate-500">|</span>
+        <span class="hidden sm:inline">Daily 11:30 AM – 11:30 PM</span>
+      </div>
+      <div class="flex items-center gap-4 shrink-0">
+        <a href="mailto:hello@restaurantdemo.com" class="hidden md:inline hover:text-white transition-colors duration-300">hello@restaurantdemo.com</a>
+        <button type="button" onclick="openCart()" class="inline-flex items-center gap-1.5 text-slate-300 hover:text-white font-medium transition-colors duration-300">
+          <span>Order (<span id="topUtilCartCount">1</span>)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MINIMAL EDITORIAL HEADER (Template 1)                                 -->
+  <!-- ===================================================================== -->
+  <header id="navbar" class="sticky top-0 z-40 bg-slatebase/95 backdrop-blur-md border-b border-white/[0.06]">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <!-- Left: Coral Mark + Restaurant Demo Wordmark -->
+      <a href="#home" class="flex items-center gap-2.5 group focus:outline-none shrink-0">
+        <span class="w-7 h-7 rounded-full bg-coral flex items-center justify-center shadow-md shadow-coral/25 transition-transform duration-500 group-hover:scale-105">
+          <svg class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 4.5C7.6 4.5 4 7.1 4 10.5v3c0 3.4 3.6 6 8 6s8-2.6 8-6v-3c0-3.4-3.6-6-8-6zm0 2c3.2 0 5.8 1.8 5.8 4s-2.6 4-5.8 4-5.8-1.8-5.8-4 2.6-4 5.8-4z"/>
+          </svg>
+        </span>
+        <span class="text-white font-bold text-base sm:text-lg tracking-tight">Restaurant Demo</span>
+      </a>
+
+      <!-- Center: Minimal Editorial Links -->
+      <nav aria-label="Primary Navigation" class="hidden lg:flex items-center gap-7 text-xs font-medium text-slate-300 tracking-wide">
+        <a href="#home" class="hover:text-white transition-colors duration-300">Home</a>
+        <a href="#craft" class="hover:text-white transition-colors duration-300">Craft</a>
+        <a href="#philosophy" class="hover:text-white transition-colors duration-300">Philosophy</a>
+        <a href="#menu" class="hover:text-white transition-colors duration-300">Menu</a>
+        <a href="#omakase" class="hover:text-white transition-colors duration-300">Omakase</a>
+        <a href="#contact" class="hover:text-white transition-colors duration-300">Contact</a>
+      </nav>
+
+      <!-- Right: Crisp Coral Pill Button ("My Order" + Live Badge) -->
+      <div class="flex items-center gap-2.5 shrink-0">
+        <button
+          id="openCartBtn"
+          type="button"
+          onclick="openCart()"
+          class="inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full bg-coral hover:bg-coral-hover text-white text-xs font-semibold tracking-wide shadow-md shadow-coral/25 transition-all duration-300 active:scale-95"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.1" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z"/>
+          </svg>
+          <span>My Order</span>
+          <span id="navCartCount" class="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-white text-coral text-[11px] font-extrabold">1</span>
+        </button>
+
+        <button id="mobileMenuBtn" type="button" aria-label="Toggle Menu" class="lg:hidden p-2 rounded-xl bg-white/[0.08] text-white hover:bg-white/15 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Panel -->
+    <div id="mobileNav" class="hidden lg:hidden bg-charcoal border-t border-white/10 px-6 py-5 space-y-2.5 text-sm">
+      <a href="#home" class="mobile-nav-link block py-2 text-slate-300 hover:text-white font-medium">Home</a>
+      <a href="#craft" class="mobile-nav-link block py-2 text-slate-300 hover:text-white font-medium">Craft</a>
+      <a href="#philosophy" class="mobile-nav-link block py-2 text-slate-300 hover:text-white font-medium">Philosophy</a>
+      <a href="#menu" class="mobile-nav-link block py-2 text-white font-semibold">Seasonal Digital Menu</a>
+      <a href="#omakase" class="mobile-nav-link block py-2 text-slate-300 hover:text-white font-medium">Omakase</a>
+      <a href="#contact" class="mobile-nav-link block py-2 text-slate-300 hover:text-white font-medium">Contact &amp; Reserve</a>
+    </div>
+  </header>
+
+  <!-- ===================================================================== -->
+  <!-- SECTION 1: HERO (TEMPLATE 1 FAITHFUL RESTRAINT + CALM ENTRANCE)       -->
+  <!-- ===================================================================== -->
+  <section id="home" class="relative bg-slatebase text-white pt-10 pb-24 sm:pt-14 sm:pb-28 lg:pt-16 lg:pb-32 overflow-x-clip">
+    <!-- Subtle Matte Stone-Grain Inline SVG Texture -->
+    <svg class="pointer-events-none absolute inset-0 w-full h-full opacity-[0.075] mix-blend-overlay" aria-hidden="true">
+      <filter id="stoneGrain">
+        <feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="3" stitchTiles="stitch" />
+      </filter>
+      <rect width="100%" height="100%" filter="url(#stoneGrain)" />
+    </svg>
+
+    <!-- Soft Overhead Studio Vignette -->
+    <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_68%_42%,rgba(255,255,255,0.065)_0%,rgba(20,23,28,0.48)_62%,rgba(10,12,15,0.9)_100%)]"></div>
+
+    <div class="relative z-20 max-w-6xl mx-auto px-5 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-6 items-center">
+      <!-- Left Editorial Column: Pure White 2-Line Headline, 2 Muted Paragraphs, 1 Coral Pill CTA -->
+      <div class="lg:col-span-5 space-y-5 text-left lg:pr-4">
+        <h1 class="hero-reveal font-sans text-4xl sm:text-5xl lg:text-[54px] font-extrabold tracking-tight text-white leading-[1.08]" style="transition-delay: 120ms;">
+          Restaurant<br />Demo
+        </h1>
+
+        <div class="hero-reveal font-body space-y-3.5 text-slate-300/80 text-sm leading-[1.8] max-w-sm" style="transition-delay: 280ms;">
+          <p>
+            Seasonal Edomae craft shaped by quiet precision—wild morning-auction cuts, warm aged akazu rice, and restrained botanical balance.
+          </p>
+          <p>
+            Scroll gently through our digital menu to customize plates from your seat, or reserve an unhurried evening at our hinoki counter.
+          </p>
+        </div>
+
+        <div class="hero-reveal pt-3" style="transition-delay: 440ms;">
+          <a
+            href="#menu"
+            class="inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-coral hover:bg-coral-hover text-white text-xs sm:text-sm font-semibold tracking-wide shadow-lg shadow-coral/30 transition-all duration-500 hover:-translate-y-0.5 active:scale-95"
+          >
+            Explore Menu
+          </a>
+        </div>
+      </div>
+
+      <!-- Right Column: -15deg Angled Matte-Black Stoneware Platter (Damped LERP Scroll Motion) -->
+      <div class="lg:col-span-7 relative flex items-center justify-center lg:justify-end min-h-[290px] sm:min-h-[370px] lg:min-h-[410px]">
+        <div class="hero-reveal hero-platter-enter relative w-full max-w-[490px] sm:max-w-[540px] flex items-center justify-center" style="transition-delay: 220ms;">
+
+          <!-- Subtle Matte Stone Pinch Accent -->
+          <div class="hidden sm:block absolute -top-2 left-5 w-5 h-5 rounded-full bg-[#0b0d10] border border-white/10 shadow-[0_6px_14px_rgba(0,0,0,0.85)] z-10"></div>
+
+          <!-- Top-Left Circular Crimson Dipping Ramekin -->
+          <div class="absolute -top-6 sm:-top-8 left-6 sm:left-16 z-20 w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#101216] p-1 border-2 border-[#252a33] shadow-[0_18px_32px_rgba(0,0,0,0.85)] overflow-hidden">
+            <img
+              src="https://images.unsplash.com/photo-1617196034183-421b4917c92d?auto=format&fit=crop&w=260&q=80"
+              alt="Crimson dipping sauce ramekin"
+              onerror="this.onerror=null;this.src='https://placehold.co/160x160/991b1b/fde68a?text=Sauce';"
+              class="w-full h-full object-cover rounded-full scale-125 saturate-150 contrast-110"
+            />
+            <div class="pointer-events-none absolute inset-0 rounded-full ring-1 ring-inset ring-white/15"></div>
+          </div>
+
+          <!-- Fresh Botanical Herb Sprig -->
+          <svg class="pointer-events-none absolute -top-4 -right-1 sm:right-1 w-14 h-14 sm:w-16 sm:h-16 drop-shadow-[0_10px_14px_rgba(0,0,0,0.75)] z-10" viewBox="0 0 80 80" fill="none" aria-hidden="true">
+            <path d="M62 12C50 22 42 36 34 52" stroke="#22C55E" stroke-width="2" stroke-linecap="round"/>
+            <path d="M58 18C68 18 74 22 76 26C68 27 61 25 56 22Z" fill="#4ADE80"/>
+            <path d="M53 26C64 27 71 32 73 38C64 38 56 34 51 29Z" fill="#22C55E"/>
+            <path d="M46 35C56 38 63 44 65 50C56 48 49 43 44 38Z" fill="#16A34A"/>
+            <path d="M52 20C44 12 38 10 32 10C35 18 42 23 49 24Z" fill="#4ADE80"/>
+            <path d="M45 30C36 24 29 22 23 24C27 31 35 35 42 35Z" fill="#22C55E"/>
+            <path d="M39 40C31 36 24 36 19 39C25 44 32 46 37 44Z" fill="#15803D"/>
+          </svg>
+
+          <!-- Delicate Scattered Cream Sesame Seeds -->
+          <svg class="pointer-events-none absolute -bottom-2 left-2 sm:left-6 w-20 h-14 z-10 opacity-90" viewBox="0 0 100 70" fill="none" aria-hidden="true">
+            <ellipse cx="22" cy="44" rx="2.6" ry="1.4" transform="rotate(-25 22 44)" fill="#F3EAD8"/>
+            <ellipse cx="31" cy="39" rx="2.3" ry="1.2" transform="rotate(18 31 39)" fill="#E7D9BE"/>
+            <ellipse cx="38" cy="48" rx="2.5" ry="1.3" transform="rotate(-12 38 48)" fill="#F7F0E2"/>
+            <ellipse cx="26" cy="54" rx="2.2" ry="1.2" transform="rotate(35 26 54)" fill="#E2D3B5"/>
+            <ellipse cx="47" cy="42" rx="2.6" ry="1.4" transform="rotate(-40 47 42)" fill="#F3EAD8"/>
+            <ellipse cx="53" cy="52" rx="2.3" ry="1.2" transform="rotate(10 53 52)" fill="#EDE2CD"/>
+            <ellipse cx="16" cy="49" rx="2.0" ry="1.1" transform="rotate(24 16 49)" fill="#DFD1B4"/>
+            <ellipse cx="62" cy="47" rx="2.1" ry="1.1" transform="rotate(-20 62 47)" fill="#F3EAD8"/>
+            <ellipse cx="42" cy="57" rx="2.4" ry="1.2" transform="rotate(42 42 57)" fill="#E7D9BE"/>
+          </svg>
+
+          <!-- Subtle Micro-Shiso Leaf -->
+          <svg class="pointer-events-none absolute bottom-0 right-6 sm:right-10 w-10 h-10 z-10 drop-shadow-[0_6px_10px_rgba(0,0,0,0.7)]" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+            <path d="M10 34C14 22 24 14 38 12C34 26 24 34 10 34Z" fill="#22C55E"/>
+            <path d="M12 33L33 16" stroke="#86EFAC" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+
+          <!-- Main Tilted Matte-Black Stoneware Platter (Damped LERP Scroll Motion Target) -->
+          <div class="relative z-20 w-[88%] sm:w-[84%] translate-y-8 sm:translate-y-12 lg:translate-y-14">
+            <div id="heroPlatterLerp" style="transform: rotate(-15deg);" class="relative rounded-[28px] bg-gradient-to-br from-[#272c36] via-[#14171d] to-[#090b0e] p-2.5 sm:p-3.5 shadow-[0_38px_65px_-12px_rgba(0,0,0,0.92),0_12px_24px_-6px_rgba(0,0,0,0.65)] ring-1 ring-white/[0.12] will-change-transform">
+              <div class="relative rounded-[20px] bg-[#101216] overflow-hidden aspect-[16/11] ring-1 ring-inset ring-black">
+                <img
+                  src="https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=1080&q=85"
+                  alt="Restaurant Demo overhead signature sushi platter on dark stoneware"
+                  onerror="this.onerror=null;this.src='https://placehold.co/800x550/14171c/ef4f27?text=Restaurant+Demo';"
+                  class="w-full h-full object-cover scale-110 brightness-[0.94] contrast-[1.12] saturate-[1.15]"
+                />
+                <div class="pointer-events-none absolute inset-0 shadow-[inset_0_0_28px_rgba(10,12,16,0.75)]"></div>
+
+                <!-- Nested Circular Matte-Black Maki Dish -->
+                <div class="absolute top-2.5 right-2.5 sm:top-3.5 sm:right-3.5 w-[47%] aspect-square rounded-full bg-[#15181f] p-1 sm:p-1.5 border border-white/15 shadow-[0_14px_30px_rgba(0,0,0,0.85)] overflow-hidden">
+                  <img
+                    src="https://images.unsplash.com/photo-1611143669185-af224c5e3252?auto=format&fit=crop&w=560&q=85"
+                    alt="Artisanal maki rolls in round stoneware dish"
+                    onerror="this.onerror=null;this.src='https://placehold.co/400x400/1c2028/ef4f27?text=Maki';"
+                    class="w-full h-full object-cover rounded-full scale-110 contrast-[1.1] saturate-[1.18]"
+                  />
+                </div>
+                <div class="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-white/[0.06]"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Jagged Organic Dry-Brush White Edge Divider -->
+    <div class="pointer-events-none absolute bottom-0 left-0 right-0 z-10 leading-none">
+      <svg class="w-full h-14 sm:h-20 lg:h-24 block" viewBox="0 0 1440 120" preserveAspectRatio="none" aria-hidden="true">
+        <g fill="#FFFFFF" opacity="0.45">
+          <path d="M18 58l14-4 9 5-18 4zM74 64l18-6 12 4-22 6zM156 50l22-5 10 4-24 5zM268 58l19-7 13 5-25 6zM384 46l25-6 11 4-28 6zM492 56l20-5 15 4-28 5zM614 48l24-7 12 5-28 6zM742 58l22-6 14 4-29 6zM868 47l26-6 11 4-30 6zM992 55l21-5 15 4-28 5zM1120 46l24-6 13 4-30 6zM1248 56l20-5 14 4-26 5zM1362 49l22-5 12 4-28 5z"/>
+          <circle cx="52" cy="56" r="2.2"/><circle cx="118" cy="52" r="1.8"/><circle cx="212" cy="48" r="2.4"/>
+          <circle cx="332" cy="52" r="2"/><circle cx="446" cy="45" r="2.3"/><circle cx="566" cy="54" r="1.9"/>
+          <circle cx="688" cy="46" r="2.5"/><circle cx="810" cy="52" r="2"/><circle cx="934" cy="44" r="2.2"/>
+          <circle cx="1062" cy="50" r="2.1"/><circle cx="1186" cy="45" r="2.4"/><circle cx="1312" cy="52" r="1.8"/>
+          <circle cx="1408" cy="46" r="2.2"/>
+        </g>
+        <path fill="#FFFFFF" opacity="0.72" d="M0,74 L24,62 L44,72 L72,56 L98,68 L126,54 L152,66 L186,52 L214,65 L246,55 L278,69 L312,50 L344,63 L378,52 L412,67 L448,54 L482,66 L518,50 L554,64 L592,53 L628,68 L664,52 L702,65 L738,54 L774,69 L812,51 L848,64 L886,52 L922,67 L958,54 L996,65 L1032,50 L1070,64 L1106,53 L1144,68 L1180,52 L1218,64 L1254,54 L1292,68 L1328,52 L1366,65 L1402,54 L1440,66 L1440,120 L0,120 Z"/>
+        <path fill="#FFFFFF" d="M0,84 L16,74 L32,80 L50,68 L68,78 L88,66 L108,76 L132,64 L154,75 L178,62 L202,74 L228,66 L252,78 L276,63 L302,75 L328,64 L354,76 L380,62 L408,74 L434,65 L462,78 L490,63 L518,75 L546,64 L574,77 L602,62 L630,74 L658,65 L686,78 L714,63 L744,75 L772,64 L802,76 L830,62 L860,74 L888,65 L918,77 L946,63 L976,75 L1004,64 L1034,76 L1064,62 L1094,74 L1124,65 L1154,78 L1184,63 L1214,75 L1244,64 L1274,76 L1304,62 L1334,74 L1364,65 L1394,77 L1420,66 L1440,74 L1440,120 L0,120 Z"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- SECTION 2: CULINARY CRAFT STRIP (Template 1 White Band)               -->
+  <!-- ===================================================================== -->
+  <section id="craft" class="bg-white pt-16 sm:pt-24 pb-20 sm:pb-28">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <!-- Delayed Viewport Reveal Header -->
+      <div class="reveal-wrap reveal-heading text-center max-w-xl mx-auto mb-14" data-stagger="0">
+        <h2 class="font-serif text-3xl sm:text-4xl font-semibold tracking-tight text-slatebase">Culinary Craft</h2>
+        <div class="w-10 h-0.5 bg-coral rounded-full mx-auto mt-3.5"></div>
+        <p class="mt-3.5 font-body text-slate-500 text-xs sm:text-sm leading-relaxed">
+          Every plate at Restaurant Demo honors unhurried knife technique, body-warm seasoned shari, and dawn-market purity.
+        </p>
+      </div>
+
+      <!-- 4-Card Alternating Row: [Photo] [Editorial Feature] [Editorial Feature] [Photo] -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Col 1: Photo Card -->
+        <div class="reveal-wrap" data-stagger="0">
+          <div data-lerp-card data-scroll-depth="10" class="luxury-card ripple-light rounded-3xl overflow-hidden shadow-card-soft h-64 cursor-pointer">
+            <div class="card-press-shell relative">
+              <img
+                src="https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?auto=format&fit=crop&w=680&q=85"
+                alt="Torched King Salmon Belly Nigiri"
+                onerror="this.onerror=null;this.src='https://placehold.co/500x400/14171c/ffffff?text=King+Salmon';"
+                class="card-photo-zoom w-full h-full object-cover"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-5 pointer-events-none">
+                <div>
+                  <p class="text-[10px] uppercase tracking-[0.2em] text-coral font-bold">Aburi Cut</p>
+                  <span class="text-white font-semibold text-sm">Torched Salmon Belly</span>
+                </div>
+              </div>
+            </div>
+            <div class="card-sheen"></div>
+            <div class="card-ripple-layer"></div>
+          </div>
+        </div>
+
+        <!-- Col 2: Editorial Feature Card -->
+        <div class="reveal-wrap" data-stagger="1">
+          <div data-lerp-card data-scroll-depth="-9" class="luxury-card rounded-3xl bg-white border border-slate-100 shadow-card-soft h-full cursor-pointer hover:border-coral/30">
+            <div class="card-press-shell p-6">
+              <div>
+                <div class="w-11 h-11 rounded-2xl bg-coral-soft text-coral flex items-center justify-center mb-4">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+                </div>
+                <h3 class="text-base font-bold text-slatebase">Aged Akazu Shari</h3>
+                <p class="mt-2 font-body text-xs sm:text-sm text-slate-500 leading-relaxed">
+                  Koshihikari rice dressed with three-year red sake-lees vinegar and served at exact body warmth.
+                </p>
+              </div>
+              <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
+                <span class="px-2.5 py-1 rounded-full bg-slatebase text-white text-[11px]">37°C Ideal</span>
+                <a href="#menu" class="text-coral hover:underline">Nigiri →</a>
+              </div>
+            </div>
+            <div class="card-sheen"></div>
+            <div class="card-ripple-layer"></div>
+          </div>
+        </div>
+
+        <!-- Col 3: Editorial Feature Card -->
+        <div class="reveal-wrap" data-stagger="2">
+          <div data-lerp-card data-scroll-depth="9" class="luxury-card rounded-3xl bg-white border border-slate-100 shadow-card-soft h-full cursor-pointer hover:border-coral/30">
+            <div class="card-press-shell p-6">
+              <div>
+                <div class="w-11 h-11 rounded-2xl bg-coral-soft text-coral flex items-center justify-center mb-4">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"/></svg>
+                </div>
+                <h3 class="text-base font-bold text-slatebase">Morning Auction Catch</h3>
+                <p class="mt-2 font-body text-xs sm:text-sm text-slate-500 leading-relaxed">
+                  Wild Hokkaido scallop, marbled bluefin otoro, and organic micro-shiso flown in before sunrise.
+                </p>
+              </div>
+              <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
+                <span class="px-2.5 py-1 rounded-full bg-coral-soft text-coral text-[11px]">Line-Caught</span>
+                <a href="#menu" class="text-coral hover:underline">Sashimi →</a>
+              </div>
+            </div>
+            <div class="card-sheen"></div>
+            <div class="card-ripple-layer"></div>
+          </div>
+        </div>
+
+        <!-- Col 4: Photo Card -->
+        <div class="reveal-wrap" data-stagger="3">
+          <div data-lerp-card data-scroll-depth="-10" class="luxury-card ripple-light rounded-3xl overflow-hidden shadow-card-soft h-64 cursor-pointer">
+            <div class="card-press-shell relative">
+              <img
+                src="https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?auto=format&fit=crop&w=680&q=85"
+                alt="Hand-rolled Signature Maki Collection"
+                onerror="this.onerror=null;this.src='https://placehold.co/500x400/14171c/ffffff?text=Maki+Rolls';"
+                class="card-photo-zoom w-full h-full object-cover"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-5 pointer-events-none">
+                <div>
+                  <p class="text-[10px] uppercase tracking-[0.2em] text-coral font-bold">Hand-Rolled</p>
+                  <span class="text-white font-semibold text-sm">Signature Maki Collection</span>
+                </div>
+              </div>
+            </div>
+            <div class="card-sheen"></div>
+            <div class="card-ripple-layer"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- SECTION 3: PHILOSOPHY BAND (Template 1 Dark-to-White Overlap)         -->
+  <!-- ===================================================================== -->
+  <section id="philosophy" class="relative pt-20 pb-24">
+    <!-- Dark Matte Charcoal Upper Band -->
+    <div class="absolute inset-x-0 top-0 h-[56%] bg-slatebase"></div>
+    <!-- Crisp White Lower Band -->
+    <div class="absolute inset-x-0 bottom-0 h-[44%] bg-white"></div>
+
+    <div class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="reveal-wrap reveal-heading text-center max-w-2xl mx-auto mb-14" data-stagger="0">
+        <span class="text-[11px] font-bold uppercase tracking-[0.26em] text-coral">Quiet Discipline</span>
+        <h2 class="mt-2 font-serif text-3xl sm:text-4xl font-semibold text-white tracking-tight">Our Culinary Philosophy</h2>
+      </div>
+
+      <!-- 4 Overlapping Cards: [Editorial Icon] [Editorial Icon] [Full-Bleed Nigiri Photo] [Editorial Icon] -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+        <!-- Card 1 -->
+        <div class="reveal-wrap" data-stagger="0">
+          <div data-lerp-card data-scroll-depth="11" class="luxury-card bg-white rounded-3xl shadow-card-soft border border-slate-100 h-full cursor-pointer">
+            <div class="card-press-shell p-7">
+              <div>
+                <div class="w-12 h-12 rounded-2xl bg-coral-soft text-coral flex items-center justify-center mb-5">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <h3 class="text-lg font-bold text-slatebase">Unhurried Table QR</h3>
+                <p class="mt-2.5 font-body text-sm text-slate-500 leading-relaxed">
+                  Order courses calmly at your own tempo straight to the counter, or schedule effortless pickup.
+                </p>
+              </div>
+              <span class="mt-6 inline-block text-[11px] font-bold text-coral uppercase tracking-[0.18em]">01 / Seamless Service</span>
+            </div>
+            <div class="card-sheen"></div>
+            <div class="card-ripple-layer"></div>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="reveal-wrap" data-stagger="1">
+          <div data-lerp-card data-scroll-depth="-9" class="luxury-card bg-white rounded-3xl shadow-card-soft border border-slate-100 h-full cursor-pointer">
+            <div class="card-press-shell p-7">
+              <div>
+                <div class="w-12 h-12 rounded-2xl bg-coral-soft text-coral flex items-center justify-center mb-5">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/></svg>
+                </div>
+                <h3 class="text-lg font-bold text-slatebase">Binchotan Seared</h3>
+                <p class="mt-2.5 font-body text-sm text-slate-500 leading-relaxed">
+                  Prime belly cuts are kissed briefly over white Kishu charcoal to unlock clean smoke and deep umami.
+                </p>
+              </div>
+              <span class="mt-6 inline-block text-[11px] font-bold text-coral uppercase tracking-[0.18em]">02 / Fire &amp; Restraint</span>
+            </div>
+            <div class="card-sheen"></div>
+            <div class="card-ripple-layer"></div>
+          </div>
+        </div>
+
+        <!-- Card 3: Full-Bleed Nigiri Photography Card (Template 1 Overlapping Col 3) -->
+        <div class="reveal-wrap" data-stagger="2">
+          <div data-lerp-card data-scroll-depth="13" class="luxury-card ripple-light rounded-3xl overflow-hidden shadow-2xl h-full min-h-[300px] lg:-my-3 cursor-pointer">
+            <div class="card-press-shell relative">
+              <img
+                src="https://images.unsplash.com/photo-1553621042-f6e147245754?auto=format&fit=crop&w=720&q=85"
+                alt="Hand-crafted nigiri plated on matte ceramic"
+                onerror="this.onerror=null;this.src='https://placehold.co/500x650/14171c/ef4f27?text=Chef+Craft';"
+                class="card-photo-zoom w-full h-full object-cover"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-slatebase/85 via-transparent to-transparent flex items-end p-6 pointer-events-none">
+                <div class="text-white">
+                  <p class="text-[10px] uppercase tracking-[0.22em] text-amber-300 font-bold">Executive Itamae</p>
+                  <p class="font-serif font-semibold text-lg mt-0.5">Chef Kenji Takahashi</p>
+                </div>
+              </div>
+            </div>
+            <div class="card-sheen"></div>
+            <div class="card-ripple-layer"></div>
+          </div>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="reveal-wrap" data-stagger="3">
+          <div data-lerp-card data-scroll-depth="-11" class="luxury-card bg-white rounded-3xl shadow-card-soft border border-slate-100 h-full cursor-pointer">
+            <div class="card-press-shell p-7">
+              <div>
+                <div class="w-12 h-12 rounded-2xl bg-coral-soft text-coral flex items-center justify-center mb-5">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/></svg>
+                </div>
+                <h3 class="text-lg font-bold text-slatebase">Sake &amp; Matcha Bar</h3>
+                <p class="mt-2.5 font-body text-sm text-slate-500 leading-relaxed">
+                  Small-batch Junmai Daiginjo pairings and first-harvest Uji matcha tonics matched to each plate.
+                </p>
+              </div>
+              <span class="mt-6 inline-block text-[11px] font-bold text-coral uppercase tracking-[0.18em]">03 / Curated Pairings</span>
+            </div>
+            <div class="card-sheen"></div>
+            <div class="card-ripple-layer"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- SECTION 4: DYNAMIC DIGITAL MENU (TEMPLATE 2 OVERHANGING PLATES)       -->
+  <!-- ===================================================================== -->
+  <section id="menu" class="relative bg-[#fafafc] py-20 sm:py-28 overflow-x-clip">
+    <div class="pointer-events-none absolute top-20 -left-20 w-80 h-80 rounded-full bg-coral/[0.035] blur-3xl"></div>
+    <div class="pointer-events-none absolute bottom-20 -right-20 w-80 h-80 rounded-full bg-amber-300/[0.06] blur-3xl"></div>
+
+    <div class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6">
+      <!-- Centered Editorial Serif Heading -->
+      <div class="reveal-wrap reveal-heading text-center max-w-2xl mx-auto" data-stagger="0">
+        <span class="text-[11px] font-bold uppercase tracking-[0.26em] text-coral">Interactive Dining</span>
+        <h2 class="mt-2 font-serif text-3xl sm:text-5xl font-semibold tracking-tight text-slatebase leading-tight">
+          Seasonal Digital Menu
+        </h2>
+        <p class="mt-3.5 font-body text-slate-500 text-sm sm:text-base leading-relaxed">
+          Select any plate to customize ingredients, tap <span class="font-bold text-slatebase">+</span> or double-tap for calm quick-add, or switch to Swipe Rail for horizontal browsing.
+        </p>
+      </div>
+
+      <!-- Menu Controls Panel -->
+      <div class="reveal-wrap mt-10 bg-white rounded-3xl p-4 sm:p-5 shadow-card-soft border border-slate-100 space-y-4" data-stagger="1">
+        <!-- Category Pills with Live Counts -->
+        <div id="categoryTabs" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- Search + Dietary Chips + Grid / Swipe Rail Toggle -->
+        <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 pt-3 border-t border-slate-100">
+          <!-- Subtle Search Bar -->
+          <div class="relative flex-1 max-w-md">
+            <svg class="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+            </svg>
+            <input
+              id="menuSearchInput"
+              type="text"
+              placeholder="Search salmon, otoro, truffle, bowls, matcha..."
+              class="w-full pl-11 pr-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-sm text-slatebase placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-coral/25 focus:border-coral transition-all duration-300"
+            />
+          </div>
+
+          <!-- Dietary Chips + Grid/Swipe Rail Toggle -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" data-diet="chef" class="diet-filter-btn px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors duration-300">
+              ★ Chef's Pick
+            </button>
+            <button type="button" data-diet="spicy" class="diet-filter-btn px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors duration-300">
+              🌶 Spicy
+            </button>
+            <button type="button" data-diet="vegan" class="diet-filter-btn px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors duration-300">
+              🌿 Plant-Based
+            </button>
+
+            <!-- Grid vs. Swipe Rail Toggle -->
+            <div class="inline-flex items-center p-1 rounded-xl bg-slate-100 border border-slate-200/60" role="group" aria-label="Menu Layout">
+              <button
+                id="layoutGridBtn"
+                type="button"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-slatebase shadow-sm transition-all duration-300"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>
+                <span>Grid</span>
+              </button>
+              <button
+                id="layoutRailBtn"
+                type="button"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slatebase transition-all duration-300"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/></svg>
+                <span>Swipe Rail</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Result Counter + Calm Gesture Hint -->
+      <div class="mt-6 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 px-1">
+        <p>Showing <span id="menuResultCount" class="font-bold text-slatebase">12</span> seasonal dishes</p>
+        <p id="menuInteractionHint" class="inline-flex items-center gap-1.5 text-slate-400 font-medium">
+          <span class="w-1.5 h-1.5 rounded-full bg-coral"></span>
+          <span>Tap to customize • Double-tap or tap + to add</span>
+        </p>
+      </div>
+
+      <!-- Menu Cards Container (Grid / Swipe Rail) -->
+      <div id="menuGrid" class="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-20">
+        <!-- Populated dynamically -->
+      </div>
+
+      <!-- Minimal Smooth Progress Bar for Swipe Rail Mode -->
+      <div id="railProgressBarWrap" class="hidden mt-5 flex items-center justify-center gap-4">
+        <button id="railPrevBtn" type="button" aria-label="Previous dish" class="w-9 h-9 rounded-full bg-white border border-slate-200 hover:border-coral text-slatebase hover:text-coral shadow-sm flex items-center justify-center transition-colors duration-300">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg>
+        </button>
+
+        <div class="w-44 sm:w-64 h-1 rounded-full bg-slate-200/90 overflow-hidden">
+          <div id="railProgressFill" class="h-full rounded-full bg-coral transition-all duration-500" style="width: 18%;"></div>
+        </div>
+
+        <button id="railNextBtn" type="button" aria-label="Next dish" class="w-9 h-9 rounded-full bg-white border border-slate-200 hover:border-coral text-slatebase hover:text-coral shadow-sm flex items-center justify-center transition-colors duration-300">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+        </button>
+      </div>
+
+      <!-- Empty Filter State -->
+      <div id="menuEmptyState" class="hidden mt-12 text-center py-16 bg-white rounded-3xl border border-slate-100 shadow-sm">
+        <div class="w-14 h-14 mx-auto rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-3">
+          <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+        </div>
+        <h3 class="text-lg font-bold text-slatebase">No matching dishes found</h3>
+        <p class="text-sm text-slate-500 mt-1">Try adjusting your search keywords or clearing dietary chips.</p>
+        <button id="resetFiltersBtn" type="button" class="mt-5 px-6 py-2.5 rounded-full bg-coral hover:bg-coral-hover text-white text-xs font-semibold transition-colors duration-300">
+          Reset Menu Filters
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- SECTION 5: OMAKASE SPOTLIGHT & FLOATING PROMO PILL BAR (Template 1)   -->
+  <!-- ===================================================================== -->
+  <section id="omakase" class="relative bg-slatebase text-white pt-24 pb-32">
+    <!-- Subtle Noise Overlay -->
+    <svg class="pointer-events-none absolute inset-0 w-full h-full opacity-[0.06] mix-blend-overlay" aria-hidden="true">
+      <rect width="100%" height="100%" filter="url(#stoneGrain)" />
+    </svg>
+
+    <div id="omakaseSwipeArea" class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 select-none">
+      <div id="omakaseDragStage" class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <!-- Left Editorial Column -->
+        <div class="reveal-wrap lg:col-span-5 space-y-5" data-stagger="0">
+          <span class="inline-block text-[11px] font-bold uppercase tracking-[0.26em] text-coral">Omakase Ritual</span>
+          <h2 class="font-serif text-3xl sm:text-5xl font-semibold tracking-tight leading-[1.12]">
+            Crafted to Elevate Your Sushi Ritual
+          </h2>
+          <p class="font-body text-slate-300/80 text-sm sm:text-base leading-relaxed max-w-md">
+            Take an unhurried seat at our 12-seat hinoki counter, or gently swipe the plate to preview tonight's three-act tasting progression.
+          </p>
+
+          <!-- Dynamic Active Course Detail Box (900ms Calm Crossfade) -->
+          <div id="omakaseTextFade" class="omakase-fade-target p-5 rounded-2xl bg-white/[0.04] border border-white/10 max-w-md">
+            <div class="flex items-center justify-between text-xs font-semibold">
+              <span id="omakaseCourseTag" class="text-coral uppercase tracking-wider">Course 01 / 03</span>
+              <span id="omakaseCourseMeta" class="text-slate-400">Included in 12-Course Tasting</span>
+            </div>
+            <h3 id="omakaseCourseTitle" class="font-serif text-lg font-semibold text-white mt-1.5">Seasonal Sashimi &amp; Maki Prelude</h3>
+            <p id="omakaseCourseDesc" class="font-body text-xs text-slate-400 mt-1.5 leading-relaxed">
+              Line-caught king salmon, sweet Hokkaido hotate, and crisp Ariake nori rolls finished with fresh yuzu kosho.
+            </p>
+          </div>
+
+          <div class="pt-2 flex flex-wrap items-center gap-3">
+            <a href="#contact" class="inline-flex items-center justify-center px-7 py-3.5 rounded-full bg-coral hover:bg-coral-hover text-white text-xs sm:text-sm font-semibold shadow-lg shadow-coral/25 transition-all duration-500 active:scale-95">
+              Reserve Counter
+            </a>
+            <button type="button" onclick="quickAddById(12, this)" class="inline-flex items-center justify-center px-5 py-3.5 rounded-full bg-white/[0.07] hover:bg-white/15 border border-white/10 text-white text-xs sm:text-sm font-medium transition-all duration-500 active:scale-95">
+              Add Tasting Box ($48)
+            </button>
+          </div>
+
+          <!-- Interactive Slide Pagination Dots -->
+          <div class="pt-3 flex items-center gap-4">
+            <div class="flex items-center gap-2.5" role="tablist" aria-label="Omakase course showcase">
+              <button type="button" data-slide="0" aria-label="Course 1" class="omakase-dot w-9 h-2 rounded-full bg-coral transition-all duration-500"></button>
+              <button type="button" data-slide="1" aria-label="Course 2" class="omakase-dot w-2.5 h-2 rounded-full bg-white/30 hover:bg-white/60 transition-all duration-500"></button>
+              <button type="button" data-slide="2" aria-label="Course 3" class="omakase-dot w-2.5 h-2 rounded-full bg-white/30 hover:bg-white/60 transition-all duration-500"></button>
+            </div>
+            <span class="text-[11px] text-slate-500 font-medium">← Swipe gently or select course →</span>
+          </div>
+        </div>
+
+        <!-- Right Column: Interactive Swipeable Circular Ceramic Omakase Plate -->
+        <div class="reveal-wrap lg:col-span-7 flex flex-col items-center" data-stagger="1">
+          <div class="relative flex items-center justify-center py-4">
+            <div class="pointer-events-none absolute inset-0 rounded-full bg-white/[0.03] blur-2xl scale-110"></div>
+
+            <!-- Circular Matte-Black Ceramic Plate -->
+            <div id="omakasePlateRing" class="relative w-72 h-72 sm:w-96 sm:h-96 rounded-full bg-gradient-to-br from-[#232730] via-[#13151a] to-[#0a0b0e] p-3.5 shadow-[0_32px_60px_rgba(0,0,0,0.85)] ring-1 ring-white/10 will-change-transform">
+              <div class="w-full h-full rounded-full overflow-hidden bg-[#101216] ring-1 ring-inset ring-white/10 relative">
+                <img
+                  id="omakasePlateImg"
+                  draggable="false"
+                  src="https://images.unsplash.com/photo-1611143669185-af224c5e3252?auto=format&fit=crop&w=820&q=85"
+                  alt="Restaurant Demo Omakase Plate"
+                  onerror="this.onerror=null;this.src='https://placehold.co/600x600/14171c/ef4f27?text=Omakase';"
+                  class="omakase-fade-target w-full h-full object-cover scale-105 pointer-events-none"
+                />
+                <div class="pointer-events-none absolute inset-0 shadow-[inset_0_0_24px_rgba(0,0,0,0.6)] rounded-full"></div>
+              </div>
+            </div>
+
+            <!-- Artisanal Walnut Chopsticks Resting Bottom-Right -->
+            <svg class="pointer-events-none absolute -bottom-4 -right-4 sm:-bottom-5 sm:-right-10 w-44 sm:w-56 h-24 drop-shadow-[0_14px_18px_rgba(0,0,0,0.85)]" viewBox="0 0 260 110" fill="none" aria-hidden="true">
+              <path d="M18 88 L236 16 L239 22 L20 92 Z" fill="url(#chopstickWood1)"/>
+              <path d="M36 98 L248 34 L250 40 L38 102 Z" fill="url(#chopstickWood2)"/>
+              <defs>
+                <linearGradient id="chopstickWood1" x1="18" y1="88" x2="239" y2="18" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#8B5A2B"/>
+                  <stop offset="0.55" stop-color="#5C3618"/>
+                  <stop offset="1" stop-color="#3A1F0C"/>
+                </linearGradient>
+                <linearGradient id="chopstickWood2" x1="36" y1="98" x2="250" y2="36" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#7B4B22"/>
+                  <stop offset="0.55" stop-color="#4E2B12"/>
+                  <stop offset="1" stop-color="#2D1607"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating White 3-Part Pill Bar Straddling the Dark-to-White Boundary -->
+    <div class="reveal-wrap max-w-4xl mx-auto px-4 sm:px-6 relative z-20 -mb-40 mt-16" data-stagger="0">
+      <div class="bg-white rounded-3xl md:rounded-full px-6 py-4 md:px-8 md:py-3.5 shadow-bar-float border border-slate-100 grid grid-cols-1 md:grid-cols-3 items-center gap-3 text-center">
+        <div class="text-xs font-semibold text-slate-500 md:text-left">
+          Daily Fresh Catch
+        </div>
+
+        <div class="flex justify-center">
+          <button
+            id="claimPromoBtn"
+            type="button"
+            class="w-full md:w-auto whitespace-nowrap px-6 py-2.5 rounded-full bg-coral hover:bg-coral-hover text-white text-xs font-bold tracking-wide shadow-md shadow-coral/25 transition-all duration-400 active:scale-95"
+          >
+            Claim 15% Off — Code: DEMO15
+          </button>
+        </div>
+
+        <div class="text-xs font-semibold text-slatebase md:text-right">
+          Dine-In • Pickup • Delivery
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- SECTION 6: VISIT & RESERVE (Template 1 3-Column Panel)                -->
+  <!-- ===================================================================== -->
+  <section id="contact" class="bg-white pt-32 pb-20 sm:pb-28">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="reveal-wrap reveal-heading text-center max-w-xl mx-auto mb-14" data-stagger="0">
+        <span class="text-[11px] font-bold uppercase tracking-[0.26em] text-coral">Hospitality</span>
+        <h2 class="mt-2 font-serif text-3xl sm:text-4xl font-semibold tracking-tight text-slatebase">Visit &amp; Reserve</h2>
+        <p class="mt-3 font-body text-slate-500 text-sm">
+          Book your table at Restaurant Demo in seconds or inquire about our intimate hinoki counter seating.
+        </p>
+      </div>
+
+      <!-- 3-Column Panel: [Tall Sushi Platter] [Details with Vermilion Dots] [Instant Booking Card] -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-7 items-stretch">
+        <!-- Col 1: Tall Sushi Platter Photography -->
+        <div class="reveal-wrap lg:col-span-3" data-stagger="0">
+          <div data-lerp-card data-scroll-depth="9" class="luxury-card ripple-light rounded-3xl overflow-hidden shadow-card-soft h-full min-h-[280px] cursor-pointer">
+            <div class="card-press-shell relative">
+              <img
+                src="https://images.unsplash.com/photo-1583623025817-d180a2221d0a?auto=format&fit=crop&w=680&q=85"
+                alt="Restaurant Demo signature sushi presentation"
+                onerror="this.onerror=null;this.src='https://placehold.co/500x650/14171c/ffffff?text=Restaurant+Demo';"
+                class="card-photo-zoom w-full h-full object-cover"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent flex items-end p-5 pointer-events-none">
+                <div class="text-white">
+                  <p class="text-[10px] uppercase tracking-[0.2em] text-amber-300 font-bold">SoHo Flagship</p>
+                  <p class="font-serif text-base font-semibold mt-0.5">Restaurant Demo</p>
+                </div>
+              </div>
+            </div>
+            <div class="card-sheen"></div>
+            <div class="card-ripple-layer"></div>
+          </div>
+        </div>
+
+        <!-- Col 2: Restaurant Details List with Vermilion Dot Indicators -->
+        <div class="reveal-wrap lg:col-span-4" data-stagger="1">
+          <div data-lerp-card data-scroll-depth="-8" class="luxury-card bg-slate-50/90 rounded-3xl border border-slate-100 shadow-card-soft h-full">
+            <div class="card-press-shell p-6 sm:p-7 space-y-5">
+              <div>
+                <h3 class="text-lg font-bold text-slatebase">Concierge &amp; Details</h3>
+                <p class="text-xs text-slate-500 mt-1">Walk-ins welcomed daily at our lounge &amp; sake bar.</p>
+              </div>
+
+              <ul class="space-y-4">
+                <li class="flex items-start gap-3.5">
+                  <span class="mt-1.5 w-2.5 h-2.5 rounded-full bg-coral shrink-0 ring-4 ring-coral/15"></span>
+                  <div>
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Address</p>
+                    <p class="text-sm font-semibold text-slatebase">418 Mercer Street, SoHo, New York, NY 10012</p>
+                  </div>
+                </li>
+
+                <li class="flex items-start gap-3.5">
+                  <span class="mt-1.5 w-2.5 h-2.5 rounded-full bg-coral shrink-0 ring-4 ring-coral/15"></span>
+                  <div>
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Hours</p>
+                    <p class="text-sm font-semibold text-slatebase">Mon – Sun: 11:30 AM – 11:30 PM</p>
+                    <p class="text-xs text-emerald-600 font-medium">Open today • Last seating 10:45 PM</p>
+                  </div>
+                </li>
+
+                <li class="flex items-start gap-3.5">
+                  <span class="mt-1.5 w-2.5 h-2.5 rounded-full bg-coral shrink-0 ring-4 ring-coral/15"></span>
+                  <div>
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Phone</p>
+                    <p class="text-sm font-semibold text-slatebase">+1 (212) 555-0194</p>
+                  </div>
+                </li>
+
+                <li class="flex items-start gap-3.5">
+                  <span class="mt-1.5 w-2.5 h-2.5 rounded-full bg-coral shrink-0 ring-4 ring-coral/15"></span>
+                  <div>
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Email</p>
+                    <a href="mailto:hello@restaurantdemo.com" class="text-sm font-semibold text-slatebase hover:text-coral transition-colors duration-300">hello@restaurantdemo.com</a>
+                  </div>
+                </li>
+
+                <li class="flex items-start gap-3.5">
+                  <span class="mt-1.5 w-2.5 h-2.5 rounded-full bg-coral shrink-0 ring-4 ring-coral/15"></span>
+                  <div>
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Private Dining</p>
+                    <p class="text-sm font-semibold text-slatebase">12-Seat Hinoki Counter &amp; Private Salon</p>
+                  </div>
+                </li>
+              </ul>
+            </div>
+            <div class="card-sheen"></div>
+          </div>
+        </div>
+
+        <!-- Col 3: Interactive Table Reservation Booking Card -->
+        <div class="reveal-wrap lg:col-span-5" data-stagger="2">
+          <div data-lerp-card data-scroll-depth="8" class="luxury-card bg-white rounded-3xl border border-slate-200/80 shadow-card-soft h-full">
+            <div class="card-press-shell p-6 sm:p-7">
+              <div class="flex items-center justify-between mb-5">
+                <h3 class="text-lg font-bold text-slatebase">Instant Table Booking</h3>
+                <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold">Instant Pass</span>
+              </div>
+
+              <form id="reservationForm" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label for="resName" class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Guest Name</label>
+                    <input id="resName" type="text" required placeholder="Alex Morgan" class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-coral/25 focus:border-coral transition-all" />
+                  </div>
+                  <div>
+                    <label for="resGuests" class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Guest Count</label>
+                    <select id="resGuests" class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-coral/25 focus:border-coral">
+                      <option value="2 Guests">2 Guests</option>
+                      <option value="3 Guests">3 Guests</option>
+                      <option value="4 Guests" selected>4 Guests</option>
+                      <option value="6 Guests">6 Guests</option>
+                      <option value="8+ Private Salon">8+ Private Salon</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label for="resDate" class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Date</label>
+                    <input id="resDate" type="date" required class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-coral/25 focus:border-coral" />
+                  </div>
+                  <div>
+                    <label for="resSeating" class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Seating Preference</label>
+                    <select id="resSeating" class="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-coral/25 focus:border-coral">
+                      <option>Main Dining Room</option>
+                      <option>Hinoki Sushi Counter</option>
+                      <option>Courtyard Terrace</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Evening Time-Slot Pills -->
+                <div>
+                  <span class="block text-[11px] font-bold text-slate-500 uppercase mb-2">Evening Time Slots</span>
+                  <div id="timeSlotGroup" class="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                    <button type="button" data-time="6:00 PM" class="time-slot-btn py-2.5 rounded-xl text-xs font-bold border border-slate-200 bg-slate-50 text-slate-700 hover:border-coral transition-colors duration-300">6:00 PM</button>
+                    <button type="button" data-time="6:45 PM" class="time-slot-btn py-2.5 rounded-xl text-xs font-bold border border-slate-200 bg-slate-50 text-slate-700 hover:border-coral transition-colors duration-300">6:45 PM</button>
+                    <button type="button" data-time="7:30 PM" class="time-slot-btn py-2.5 rounded-xl text-xs font-bold border border-coral bg-coral text-white shadow-sm transition-colors duration-300">7:30 PM</button>
+                    <button type="button" data-time="8:15 PM" class="time-slot-btn py-2.5 rounded-xl text-xs font-bold border border-slate-200 bg-slate-50 text-slate-700 hover:border-coral transition-colors duration-300">8:15 PM</button>
+                    <button type="button" data-time="9:00 PM" class="time-slot-btn py-2.5 rounded-xl text-xs font-bold border border-slate-200 bg-slate-50 text-slate-700 hover:border-coral transition-colors duration-300">9:00 PM</button>
+                  </div>
+                </div>
+
+                <div class="pt-2 flex flex-col sm:flex-row gap-3">
+                  <button type="submit" class="flex-1 py-3 px-6 rounded-full bg-coral hover:bg-coral-hover text-white text-sm font-semibold shadow-lg shadow-coral/25 transition-all duration-400 active:scale-95">
+                    Confirm Reservation
+                  </button>
+                  <a href="#menu" class="py-3 px-6 rounded-full border border-slate-300 hover:border-slatebase text-slatebase text-sm font-semibold text-center transition-colors duration-300">
+                    View Menu
+                  </a>
+                </div>
+              </form>
+            </div>
+            <div class="card-sheen"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- MINIMAL FOOTER                                                        -->
+  <!-- ===================================================================== -->
+  <footer class="bg-slatebase text-slate-400 border-t border-white/10">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-3">
+        <span class="w-8 h-8 rounded-full bg-coral flex items-center justify-center text-white font-bold text-sm">R</span>
+        <div>
+          <p class="text-white font-semibold text-sm tracking-tight">Restaurant Demo</p>
+          <p class="text-xs text-slate-500">© 2026 Restaurant Demo. All rights reserved.</p>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center justify-center gap-6 text-xs font-medium">
+        <a href="#home" class="hover:text-white transition-colors duration-300">Home</a>
+        <a href="#craft" class="hover:text-white transition-colors duration-300">Craft</a>
+        <a href="#philosophy" class="hover:text-white transition-colors duration-300">Philosophy</a>
+        <a href="#menu" class="hover:text-white transition-colors duration-300">Menu</a>
+        <a href="#omakase" class="hover:text-white transition-colors duration-300">Omakase</a>
+        <a href="#contact" class="hover:text-white transition-colors duration-300">Contact</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===================================================================== -->
+  <!-- FLOATING QUICK-ORDER BAR (Calm Bottom Pill)                           -->
+  <!-- ===================================================================== -->
+  <div id="floatingCartBar" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 w-[92%] max-w-md translate-y-28 opacity-0 pointer-events-none transition-all duration-700">
+    <button type="button" onclick="openCart()" class="w-full bg-slatebase/95 backdrop-blur-md text-white rounded-2xl px-5 py-3.5 shadow-2xl border border-white/15 flex items-center justify-between hover:bg-charcoal transition-colors duration-300">
+      <div class="flex items-center gap-3">
+        <span id="floatCartCount" class="w-8 h-8 rounded-xl bg-coral text-white font-extrabold text-sm flex items-center justify-center">1</span>
+        <div class="text-left">
+          <p class="text-[11px] text-slate-400 font-medium">Restaurant Demo Order</p>
+          <p id="floatCartSummary" class="text-sm font-semibold">1 dish selected</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="floatCartTotal" class="text-base font-bold text-white">$0.00</span>
+        <svg class="w-4 h-4 text-coral" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+      </div>
+    </button>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- DISH DETAIL & CUSTOMIZATION MODAL                                     -->
+  <!-- ===================================================================== -->
+  <div id="dishModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-obsidian/75 backdrop-blur-sm">
+    <div id="dishModalContent" class="bg-white rounded-[32px] max-w-lg w-full overflow-hidden shadow-2xl max-h-[92vh] flex flex-col">
+      <!-- Populated dynamically -->
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- SLIDE-OVER ORDER CART DRAWER (Dine-In QR / Pickup / Delivery)         -->
+  <!-- ===================================================================== -->
+  <div id="cartDrawerBackdrop" class="fixed inset-0 z-50 hidden bg-obsidian/65 backdrop-blur-sm transition-opacity duration-500">
+    <aside id="cartDrawerPanel" class="absolute right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-2xl flex flex-col translate-x-full transition-transform duration-500 ease-out">
+      <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h3 class="font-serif text-xl font-semibold text-slatebase">My Order</h3>
+          <p class="text-xs text-slate-500">Restaurant Demo • Prepared fresh to order</p>
+        </div>
+        <button id="closeCartBtn" type="button" aria-label="Close Order Drawer" class="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Fulfillment Mode Selector -->
+      <div class="px-6 pt-4 pb-2">
+        <div class="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-slate-100 text-xs font-bold">
+          <button type="button" data-mode="dinein" class="fulfillment-btn py-2 rounded-xl bg-white text-slatebase shadow-sm transition-all duration-300">Dine-In QR</button>
+          <button type="button" data-mode="pickup" class="fulfillment-btn py-2 rounded-xl text-slate-500 hover:text-slatebase transition-all duration-300">Pickup</button>
+          <button type="button" data-mode="delivery" class="fulfillment-btn py-2 rounded-xl text-slate-500 hover:text-slatebase transition-all duration-300">Delivery</button>
+        </div>
+
+        <div id="dineinDetailBox" class="mt-3 flex items-center justify-between bg-coral-soft/75 border border-coral/20 rounded-2xl px-3.5 py-2 text-xs">
+          <span class="font-semibold text-slatebase">Serving Table #</span>
+          <input id="tableNumberInput" type="text" value="Table 07" class="w-24 text-right font-bold text-coral bg-transparent focus:outline-none" />
+        </div>
+        <div id="pickupDetailBox" class="hidden mt-3 flex items-center justify-between bg-slate-100 rounded-2xl px-3.5 py-2.5 text-xs">
+          <span class="font-semibold text-slatebase">Express Counter Pickup</span>
+          <span class="font-bold text-emerald-600">Ready in ~18 mins</span>
+        </div>
+        <div id="deliveryDetailBox" class="hidden mt-3 bg-slate-100 rounded-2xl px-3.5 py-2 text-xs">
+          <label for="deliveryAddressInput" class="block text-[10px] font-bold uppercase text-slate-400">Delivery Address (+$4.50)</label>
+          <input id="deliveryAddressInput" type="text" value="240 Greene St, Apt 4B" class="w-full font-semibold text-slatebase bg-transparent focus:outline-none mt-0.5" />
+        </div>
+      </div>
+
+      <!-- Cart Items -->
+      <div id="cartItemsContainer" class="flex-1 overflow-y-auto px-6 py-4 space-y-3.5"></div>
+
+      <!-- Promo & Totals Footer -->
+      <div class="border-t border-slate-100 bg-slate-50/90 p-6 space-y-4">
+        <div class="space-y-2">
+          <div class="flex gap-2">
+            <input id="promoInput" type="text" placeholder="Promo code (try DEMO15)" class="flex-1 px-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-xs font-medium uppercase placeholder:normal-case focus:outline-none focus:border-coral" />
+            <button id="applyPromoBtn" type="button" class="px-4 py-2.5 rounded-2xl bg-slatebase hover:bg-charcoal text-white text-xs font-bold transition-colors">
+              Apply
+            </button>
+          </div>
+          <div id="activePromoBadge" class="hidden items-center justify-between px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-700 font-semibold">
+            <span>✓ Code DEMO15 applied (15% off)</span>
+            <button id="removePromoBtn" type="button" class="text-emerald-800 hover:underline font-bold">Remove</button>
+          </div>
+        </div>
+
+        <div class="space-y-1.5 text-sm">
+          <div class="flex justify-between text-slate-500">
+            <span>Subtotal</span>
+            <span id="cartSubtotal" class="font-semibold text-slatebase">$0.00</span>
+          </div>
+          <div id="cartDiscountRow" class="hidden justify-between text-emerald-600">
+            <span>DEMO15 Discount (15%)</span>
+            <span id="cartDiscount" class="font-semibold">-$0.00</span>
+          </div>
+          <div id="cartDeliveryRow" class="hidden justify-between text-slate-500">
+            <span>Courier Delivery</span>
+            <span class="font-semibold text-slatebase">$4.50</span>
+          </div>
+          <div class="flex justify-between text-slate-500">
+            <span>Tax &amp; Service (8%)</span>
+            <span id="cartTax" class="font-semibold text-slatebase">$0.00</span>
+          </div>
+          <div class="flex justify-between text-base font-extrabold text-slatebase pt-2 border-t border-slate-200">
+            <span>Total</span>
+            <span id="cartGrandTotal" class="text-coral">$0.00</span>
+          </div>
+        </div>
+
+        <button id="checkoutBtn" type="button" class="w-full py-3.5 rounded-full bg-coral hover:bg-coral-hover disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-sm shadow-lg shadow-coral/25 transition-all duration-300 active:scale-95">
+          Send Order to Kitchen
+        </button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- CONFIRMATION MODAL (Kitchen Receipt #RD-XXXX & Reservation Pass)      -->
+  <!-- ===================================================================== -->
+  <div id="confirmModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-obsidian/75 backdrop-blur-sm">
+    <div class="bg-white rounded-[32px] max-w-md w-full p-7 text-center shadow-2xl space-y-4">
+      <div class="w-16 h-16 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+      </div>
+      <div>
+        <p class="text-[11px] font-bold uppercase tracking-[0.22em] text-coral">Restaurant Demo</p>
+        <h3 id="confirmTitle" class="font-serif text-2xl font-semibold text-slatebase mt-1">Confirmed</h3>
+      </div>
+      <p id="confirmMessage" class="font-body text-sm text-slate-500 leading-relaxed"></p>
+      <div id="confirmMeta" class="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-xs text-slate-600 font-medium space-y-1.5 text-left"></div>
+      <button id="closeConfirmBtn" type="button" class="w-full py-3 rounded-full bg-slatebase hover:bg-charcoal text-white font-semibold text-sm transition-colors duration-300">
+        Done
+      </button>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- CALM TOAST NOTIFICATION CONTAINER                                     -->
+  <!-- ===================================================================== -->
+  <div id="toastContainer" class="fixed top-20 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- ===================================================================== -->
+  <!-- APPLICATION LOGIC & LUXURY DAMPED LERP MOTION ENGINE                  -->
+  <!-- ===================================================================== -->
+  <script>
+    /* =======================================================================
+       1. CURATED SEASONAL MENU & OMAKASE DATA
+       ======================================================================= */
+    const MENU_CATEGORIES = [
+      'All',
+      'Signature Rolls',
+      'Nigiri & Sashimi',
+      'Fresh Bowls',
+      'Small Plates',
+      'Drinks',
+    ];
+
+    const MENU_ITEMS = [
+      {
+        id: 1,
+        name: 'Truffle Salmon Aburi',
+        category: 'Nigiri & Sashimi',
+        price: 18.50,
+        calories: 240,
+        serving: '6 pieces',
+        featured: true,
+        tags: ['chef'],
+        description: 'Flame-torched Scottish salmon belly brushed with black truffle ponzu, shaved yuzu peel, and crisp shallots over warm akazu rice.',
+        ingredients: ['King Salmon Belly', 'Black Truffle Soy', 'Yuzu Peel', 'Aged Akazu Shari'],
+        image: 'https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?auto=format&fit=crop&w=560&q=85',
+      },
+      {
+        id: 2,
+        name: 'Crispy Spicy Tuna Roll',
+        category: 'Signature Rolls',
+        price: 16.50,
+        calories: 280,
+        serving: '6 pieces',
+        featured: true,
+        tags: ['chef', 'spicy'],
+        description: 'Hand-minced bluefin tuna tossed in smoky togarashi aioli with ripe Hass avocado, cucumber, and airy tempura crunch.',
+        ingredients: ['Bluefin Tuna', 'Hass Avocado', 'Togarashi Aioli', 'Tempura Crunch', 'Ariake Nori'],
+        image: 'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?auto=format&fit=crop&w=560&q=85',
+      },
+      {
+        id: 3,
+        name: 'Hokkaido Scallop Crudo',
+        category: 'Nigiri & Sashimi',
+        price: 22.00,
+        calories: 165,
+        serving: '5 pieces',
+        featured: true,
+        tags: ['chef'],
+        description: 'Sweet wild-caught Hokkaido scallops sliced razor thin, dressed with Meyer lemon olive oil, sea salt flakes, and micro shiso.',
+        ingredients: ['Hokkaido Scallop', 'Meyer Lemon Oil', 'Maldon Salt', 'Micro Shiso'],
+        image: 'https://images.unsplash.com/photo-1534482421-64566f976cfa?auto=format&fit=crop&w=560&q=85',
+      },
+      {
+        id: 4,
+        name: 'Yuzu Avocado Garden Roll',
+        category: 'Signature Rolls',
+        price: 14.50,
+        calories: 210,
+        serving: '8 pieces',
+        featured: false,
+        tags: ['vegan'],
+        description: 'Creamy avocado, charred asparagus, pickled yellow daikon, and bright yuzu miso topped with crispy lotus chips.',
+        ingredients: ['Hass Avocado', 'Charred Asparagus', 'Pickled Daikon', 'Yuzu Miso', 'Lotus Chip'],
+        image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=560&q=85',
+      },
+      {
+        id: 5,
+        name: 'Bluefin Otoro & Gold Leaf',
+        category: 'Nigiri & Sashimi',
+        price: 26.00,
+        calories: 250,
+        serving: '4 pieces',
+        featured: true,
+        tags: ['chef'],
+        description: 'Prime marbled bluefin belly glazed with house nikiri tare, freshly grated Hon-wasabi root, and a whisper of 24k gold leaf.',
+        ingredients: ['Bluefin Otoro', 'Hon-Wasabi Root', 'Nikiri Soy', '24k Edible Gold'],
+        image: 'https://images.unsplash.com/photo-1553621042-f6e147245754?auto=format&fit=crop&w=560&q=85',
+      },
+      {
+        id: 6,
+        name: 'King Salmon Chirashi Bowl',
+        category: 'Fresh Bowls',
+        price: 24.50,
+        calories: 460,
+        serving: '1 serving',
+        featured: false,
+        tags: ['chef'],
+        description: 'Jewel-like cuts of salmon, tuna, ikura pearls, tamago, and crisp radish arranged over warm seasoned Koshihikari rice.',
+        ingredients: ['Wild Salmon', 'Bluefin Tuna', 'Salmon Roe', 'Seasoned Sushi Rice', 'Avocado'],
+        image: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=560&q=85',
+      },
+      {
+        id: 7,
+        name: 'Black Garlic Tonkotsu Bowl',
+        category: 'Fresh Bowls',
+        price: 20.00,
+        calories: 520,
+        serving: '1 serving',
+        featured: false,
+        tags: ['spicy'],
+        description: '18-hour velvety pork broth layered with roasted black garlic mayu, braised chashu, ajitama egg, and springy rye noodles.',
+        ingredients: ['18hr Tonkotsu', 'Black Garlic Oil', 'Chashu Pork', 'Marinated Egg', 'Scallion'],
+        image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=560&q=85',
+      },
+      {
+        id: 8,
+        name: 'Sesame Tofu & Edamame Bowl',
+        category: 'Fresh Bowls',
+        price: 17.50,
+        calories: 340,
+        serving: '1 serving',
+        featured: false,
+        tags: ['vegan'],
+        description: 'Crisp organic tofu, shelled edamame, pickled ginger, seaweed salad, and toasted sesame dressing over forbidden black rice.',
+        ingredients: ['Organic Crispy Tofu', 'Edamame', 'Black Rice', 'Wakame Salad', 'Sesame Dressing'],
+        image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=560&q=85',
+      },
+      {
+        id: 9,
+        name: 'Lacy Shiitake Gyoza',
+        category: 'Small Plates',
+        price: 13.00,
+        calories: 230,
+        serving: '6 pieces',
+        featured: false,
+        tags: ['vegan', 'spicy'],
+        description: 'Pan-seared dumplings with a crisp golden lace skirt, stuffed with charred shiitake, ginger, and served with chili rayu.',
+        ingredients: ['Shiitake Mushroom', 'Fresh Ginger', 'Chili Rayu', 'Aged Black Vinegar'],
+        image: 'https://images.unsplash.com/photo-1626804475297-41608ea09aeb?auto=format&fit=crop&w=560&q=85',
+      },
+      {
+        id: 10,
+        name: 'Crispy Rice & Spicy Salmon',
+        category: 'Small Plates',
+        price: 16.00,
+        calories: 295,
+        serving: '4 pieces',
+        featured: false,
+        tags: ['chef', 'spicy'],
+        description: 'Golden-seared sushi rice pillows crowned with velvety spicy salmon tartare, serrano pepper slice, and sweet eel glaze.',
+        ingredients: ['Seared Sushi Rice', 'Salmon Tartare', 'Serrano Chili', 'Unagi Glaze'],
+        image: 'https://images.unsplash.com/photo-1611143669185-af224c5e3252?auto=format&fit=crop&w=560&q=85',
+      },
+      {
+        id: 11,
+        name: 'Ceremonial Uji Matcha Tonic',
+        category: 'Drinks',
+        price: 9.50,
+        calories: 65,
+        serving: '350 ml',
+        featured: false,
+        tags: ['vegan'],
+        description: 'First-harvest stone-ground Uji matcha hand-whisked over chilled sparkling yuzu tonic and crystal-clear ice.',
+        ingredients: ['Uji Matcha', 'Yuzu Citrus', 'Sparkling Mineral Water', 'Organic Agave'],
+        image: 'https://images.unsplash.com/photo-1515823064-d6e0c04616a7?auto=format&fit=crop&w=560&q=85',
+      },
+      {
+        id: 12,
+        name: 'Restaurant Demo Tasting Box',
+        category: 'Signature Rolls',
+        price: 48.00,
+        calories: 610,
+        serving: '12 pieces',
+        featured: true,
+        tags: ['chef'],
+        description: 'Curated chef lacquer box pairing 6 seasonal nigiri, 4 prime sashimi cuts, and our signature Crispy Spicy Tuna Roll.',
+        ingredients: ['Chef Daily Catch', 'Bluefin Otoro', 'Salmon Belly', 'Hokkaido Scallop', 'Fresh Wasabi'],
+        image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=560&q=85',
+      },
+    ];
+
+    const OMAKASE_COURSES = [
+      {
+        tag: 'Course 01 / 03',
+        meta: 'Included in 12-Course Tasting',
+        title: 'Seasonal Sashimi & Maki Prelude',
+        desc: 'Line-caught king salmon, sweet Hokkaido hotate, and crisp Ariake nori rolls finished with fresh yuzu kosho.',
+        image: 'https://images.unsplash.com/photo-1611143669185-af224c5e3252?auto=format&fit=crop&w=820&q=85',
+      },
+      {
+        tag: 'Course 02 / 03',
+        meta: 'Binchotan Flame Progression',
+        title: 'Torched Otoro & Salmon Belly',
+        desc: 'Kishu charcoal-kissed fatty bluefin and Scottish salmon brushed with aged nikiri soy over body-warm red-vinegar shari.',
+        image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=820&q=85',
+      },
+      {
+        tag: 'Course 03 / 03',
+        meta: 'Chef Finale & Sake Pairing',
+        title: 'Hand-Rolled Temaki & Truffle Finale',
+        desc: 'Crisp warm nori cone filled with minced otoro, crispy shallot, and fresh Hon-wasabi, paired with chilled Junmai Daiginjo.',
+        image: 'https://images.unsplash.com/photo-1553621042-f6e147245754?auto=format&fit=crop&w=820&q=85',
+      },
+    ];
+
+    const ADDONS_LIST = [
+      { id: 'wasabi', label: 'Fresh Grated Hon-Wasabi', price: 2.50 },
+      { id: 'truffle', label: 'Extra Black Truffle Ponzu', price: 2.00 },
+      { id: 'tamari', label: 'Gluten-Free Tamari Soy', price: 0.00 },
+      { id: 'ginger', label: 'House Pickled Pink Ginger', price: 1.00 },
+    ];
+
+    /* =======================================================================
+       2. APPLICATION STATE
+       ======================================================================= */
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const state = {
+      activeCategory: 'All',
+      searchQuery: '',
+      activeDiets: new Set(),
+      layoutMode: 'grid', // 'grid' | 'rail'
+      selectedCardId: 2,  // Highlighted coral-vermilion card (Template 2 motif)
+      omakaseSlide: 0,
+      cart: [
+        {
+          cartKey: '2__Medium__',
+          itemId: 2,
+          name: 'Crispy Spicy Tuna Roll',
+          price: 16.50,
+          image: 'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?auto=format&fit=crop&w=560&q=85',
+          spice: 'Medium',
+          addons: [],
+          qty: 1,
+        },
+      ],
+      fulfillmentMode: 'dinein',
+      promoApplied: false,
+      selectedTimeSlot: '7:30 PM',
+    };
+
+    /* =======================================================================
+       3. CORE UTILITIES (Formatting, Haptics, Clipboard, Toasts, Calm Arc)
+       ======================================================================= */
+    function formatCurrency(val) {
+      return '$' + Number(val).toFixed(2);
+    }
+
+    function triggerHaptic(ms = 8) {
+      try {
+        if (navigator.vibrate) navigator.vibrate(ms);
+      } catch (_) {}
+    }
+
+    function copyTextFallback(text) {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      } catch (err) {
+        console.error('Copy error:', err);
+      }
+    }
+
+    function showToast(message, type = 'success') {
+      try {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        const styleClass = type === 'error'
+          ? 'bg-rose-600 text-white'
+          : 'bg-slatebase/95 backdrop-blur-md text-white border border-white/15';
+        toast.className = `${styleClass} px-4 py-3 rounded-2xl shadow-2xl text-xs sm:text-sm font-medium flex items-center gap-2.5 transform translate-x-6 opacity-0 transition-all duration-500 pointer-events-auto`;
+        toast.innerHTML = `
+          <span class="w-2 h-2 rounded-full ${type === 'error' ? 'bg-white' : 'bg-coral'}"></span>
+          <span>${message}</span>
+        `;
+        container.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.remove('translate-x-6', 'opacity-0'));
+        setTimeout(() => {
+          toast.classList.add('translate-x-6', 'opacity-0');
+          setTimeout(() => toast.remove(), 500);
+        }, 2900);
+      } catch (err) {
+        console.error('Toast error:', err);
+      }
+    }
+
+    /**
+     * Calm 850ms curved fly-to-cart arc animation from tapped card/button to My Order pill.
+     */
+    function animateFlyToCart(sourceEl, imageUrl) {
+      if (prefersReducedMotion || !sourceEl) return;
+      try {
+        const targetBtn = document.getElementById('openCartBtn');
+        if (!targetBtn) return;
+
+        const srcRect = sourceEl.getBoundingClientRect();
+        const dstRect = targetBtn.getBoundingClientRect();
+
+        const startX = srcRect.left + srcRect.width / 2;
+        const startY = srcRect.top + srcRect.height / 2;
+        const endX = dstRect.left + dstRect.width / 2;
+        const endY = dstRect.top + dstRect.height / 2;
+
+        const flyer = document.createElement('div');
+        flyer.className = 'fixed z-[90] pointer-events-none flex items-center justify-center rounded-full shadow-2xl ring-2 ring-coral bg-slatebase overflow-hidden';
+        flyer.style.width = '42px';
+        flyer.style.height = '42px';
+        flyer.style.left = `${startX - 21}px`;
+        flyer.style.top = `${startY - 21}px`;
+        flyer.innerHTML = `
+          <img src="${imageUrl}" alt="" class="w-full h-full object-cover opacity-90" />
+          <span class="absolute inset-0 bg-coral/35 flex items-center justify-center text-white text-xs font-bold">+1</span>
+        `;
+        document.body.appendChild(flyer);
+
+        const dx = endX - startX;
+        const dy = endY - startY;
+
+        const anim = flyer.animate(
+          [
+            { transform: 'translate3d(0, 0, 0) scale(1.06)', opacity: 0.96 },
+            { transform: `translate3d(${dx * 0.42}px, ${dy * 0.52 - 72}px, 0) scale(0.84)`, opacity: 0.92, offset: 0.48 },
+            { transform: `translate3d(${dx}px, ${dy}px, 0) scale(0.32)`, opacity: 0.1 },
+          ],
+          {
+            duration: 850,
+            easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+            fill: 'forwards',
+          }
+        );
+
+        anim.onfinish = () => {
+          flyer.remove();
+          targetBtn.classList.remove('cart-pulse');
+          void targetBtn.offsetWidth;
+          targetBtn.classList.add('cart-pulse');
+        };
+      } catch (err) {
+        console.error('Fly-to-cart error:', err);
+      }
+    }
+
+    function getCartItemCount(itemId) {
+      return state.cart
+        .filter((entry) => entry.itemId === itemId)
+        .reduce((sum, entry) => sum + entry.qty, 0);
+    }
+
+    /* =======================================================================
+       4. DELAYED VIEWPORT REVEAL SYSTEM ("LET THE PAGE COME TO IT")
+          rootMargin: '0px 0px -24% 0px', threshold: 0.12
+          + Calm sequential row stagger (180ms) + Bottom-of-page fallback
+       ======================================================================= */
+    let revealObserver = null;
+
+    function triggerRevealElement(el, immediateStagger = null) {
+      if (el.classList.contains('is-revealed')) return;
+      const staggerIndex = immediateStagger !== null
+        ? immediateStagger
+        : Number(el.dataset.stagger || 0);
+      const delayMs = staggerIndex * 180;
+
+      // Apply matching delay to overhanging circular dish plate so it settles gracefully
+      const plateWrap = el.querySelector('.plate-reveal-wrap');
+      if (plateWrap) {
+        plateWrap.style.transitionDelay = `${delayMs + 110}ms`;
+      }
+      el.style.transitionDelay = `${delayMs}ms`;
+
+      requestAnimationFrame(() => {
+        el.classList.add('is-revealed');
+      });
+    }
+
+    function initDelayedRevealObserver() {
+      const elements = document.querySelectorAll('.reveal-wrap');
+
+      if (prefersReducedMotion || !('IntersectionObserver' in window)) {
+        elements.forEach((el) => el.classList.add('is-revealed'));
+        return;
+      }
+
+      revealObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              triggerRevealElement(entry.target);
+              revealObserver.unobserve(entry.target);
+            }
+          });
+        },
+        {
+          root: null,
+          rootMargin: '0px 0px -24% 0px',
+          threshold: 0.12,
+        }
+      );
+
+      elements.forEach((el) => revealObserver.observe(el));
+
+      // Bottom-of-page safety fallback: reveals any remaining bottom items once user approaches footer
+      window.addEventListener('scroll', checkBottomRevealFallback, { passive: true });
+    }
+
+    function checkBottomRevealFallback() {
+      const scrolledBottom = window.innerHeight + window.scrollY;
+      const docHeight = document.documentElement.scrollHeight;
+      if (scrolledBottom >= docHeight - 120) {
+        document.querySelectorAll('.reveal-wrap:not(.is-revealed)').forEach((el, idx) => {
+          const rect = el.getBoundingClientRect();
+          if (rect.top < window.innerHeight + 40) {
+            triggerRevealElement(el, idx % 4);
+            if (revealObserver) revealObserver.unobserve(el);
+          }
+        });
+      }
+    }
+
+    /* =======================================================================
+       5. SILKY DAMPED (LERP) SCROLL & 3D CARD TILT ENGINE
+          current += (target - current) * 0.055  (weighted, calm, honey-smooth)
+       ======================================================================= */
+    const lerpCardsRegistry = new Map(); // DOM element -> smooth physics state
+    const heroPlatterState = {
+      curY: 0, targetY: 0,
+      curRot: -15, targetRot: -15,
+    };
+
+    function registerLerpCard(cardEl) {
+      if (lerpCardsRegistry.has(cardEl)) return;
+
+      const cardState = {
+        el: cardEl,
+        plateLerp: cardEl.querySelector('.plate-lerp-layer'),
+        isMenuCard: cardEl.classList.contains('menu-card'),
+        depthStrength: Number(cardEl.dataset.scrollDepth || 0),
+        indexDir: Number(cardEl.dataset.plateDir || 1),
+        // Damped transform values
+        curRx: 0, targetRx: 0,
+        curRy: 0, targetRy: 0,
+        curScrollY: 0, targetScrollY: 0,
+        curScale: 1, targetScale: 1,
+        curPlateRot: 0, targetPlateRot: 0,
+        curPlateY: 0, targetPlateY: 0,
+      };
+
+      lerpCardsRegistry.set(cardEl, cardState);
+      bindCalmCardInteractions(cardEl, cardState);
+    }
+
+    function unregisterStaleMenuCards() {
+      for (const [el] of lerpCardsRegistry.entries()) {
+        if (!document.body.contains(el)) {
+          lerpCardsRegistry.delete(el);
+        }
+      }
+    }
+
+    /**
+     * Spawns a calm 900ms expanding touch ripple from the exact tap coordinates.
+     */
+    function spawnCalmRipple(cardEl, clientX, clientY) {
+      if (prefersReducedMotion) return;
+      const layer = cardEl.querySelector('.card-ripple-layer');
+      if (!layer) return;
+
+      const rect = cardEl.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      const size = Math.max(rect.width, rect.height) * 2.15;
+
+      const wave = document.createElement('span');
+      wave.className = 'card-ripple-wave';
+      wave.style.left = `${x}px`;
+      wave.style.top = `${y}px`;
+      wave.style.width = `${size}px`;
+      wave.style.height = `${size}px`;
+      layer.appendChild(wave);
+      setTimeout(() => wave.remove(), 950);
+    }
+
+    /**
+     * Binds calm architectural pointer/touch micro-tilt (max 4deg), soft specular sheen,
+     * gentle 280ms tactile press, and 900ms ripple to each card.
+     */
+    function bindCalmCardInteractions(cardEl, cardState) {
+      const isControl = (target) => !!target.closest('input, select, textarea, button, a, label');
+
+      const updateTiltTarget = (clientX, clientY) => {
+        if (prefersReducedMotion) return;
+        const rect = cardEl.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+
+        const px = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+        const py = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+
+        // Architectural max 4deg calm tilt
+        const maxDeg = 4;
+        cardState.targetRy = (px - 0.5) * 2 * maxDeg;
+        cardState.targetRx = -(py - 0.5) * 2 * maxDeg;
+
+        cardEl.classList.add('is-interacting');
+        cardEl.style.setProperty('--sheen-x', `${(px * 100).toFixed(1)}%`);
+        cardEl.style.setProperty('--sheen-y', `${(py * 100).toFixed(1)}%`);
+        cardEl.style.setProperty('--sheen-opacity', '1');
+      };
+
+      const resetTiltTarget = () => {
+        cardState.targetRx = 0;
+        cardState.targetRy = 0;
+        cardEl.classList.remove('is-interacting', 'is-pressed');
+        cardEl.style.setProperty('--sheen-opacity', '0');
+      };
+
+      cardEl.addEventListener('pointerdown', (e) => {
+        if (isControl(e.target) && !cardState.isMenuCard) return;
+        if (e.target.closest('.quick-add-btn')) return;
+
+        cardEl.classList.add('is-pressed');
+        spawnCalmRipple(cardEl, e.clientX, e.clientY);
+        updateTiltTarget(e.clientX, e.clientY);
+        if (e.pointerType === 'touch') triggerHaptic(8);
+      });
+
+      cardEl.addEventListener('pointermove', (e) => {
+        if (e.pointerType === 'mouse') {
+          if (isControl(e.target) && !cardState.isMenuCard) {
+            resetTiltTarget();
+            return;
+          }
+          updateTiltTarget(e.clientX, e.clientY);
+        }
+      });
+
+      cardEl.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 1) {
+          updateTiltTarget(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }, { passive: true });
+
+      cardEl.addEventListener('pointerup', resetTiltTarget);
+      cardEl.addEventListener('pointercancel', resetTiltTarget);
+      cardEl.addEventListener('pointerleave', resetTiltTarget);
+      cardEl.addEventListener('touchend', resetTiltTarget, { passive: true });
+      cardEl.addEventListener('touchcancel', resetTiltTarget, { passive: true });
+    }
+
+    /**
+     * Master 60fps LERP Loop (damping factor 0.055 for weighted, calm motion).
+     */
+    function startLuxuryLerpLoop() {
+      if (prefersReducedMotion) return;
+
+      const SCROLL_DAMP = 0.055;
+      const TILT_DAMP = 0.075;
+      const heroSection = document.getElementById('home');
+      const heroPlatter = document.getElementById('heroPlatterLerp');
+
+      function tick() {
+        const vh = window.innerHeight || 800;
+        const scrollY = window.scrollY || window.pageYOffset;
+
+        // 1. Damped Hero Platter Scroll Parallax & Gentle Rotation
+        if (heroSection && heroPlatter) {
+          const heroH = heroSection.offsetHeight || 640;
+          const p = Math.max(0, Math.min(1.2, scrollY / heroH));
+          heroPlatterState.targetY = p * 28;
+          heroPlatterState.targetRot = -15 + p * 5.2;
+
+          heroPlatterState.curY += (heroPlatterState.targetY - heroPlatterState.curY) * SCROLL_DAMP;
+          heroPlatterState.curRot += (heroPlatterState.targetRot - heroPlatterState.curRot) * SCROLL_DAMP;
+
+          heroPlatter.style.transform =
+            `translate3d(0, ${heroPlatterState.curY.toFixed(2)}px, 0) rotate(${heroPlatterState.curRot.toFixed(2)}deg)`;
+        }
+
+        // 2. Damped Scroll Depth, Sweet-Spot Elevation, Plate Rotation & Calm 3D Micro-Tilt
+        for (const c of lerpCardsRegistry.values()) {
+          const rect = c.el.getBoundingClientRect();
+          const inProximity = rect.bottom > -160 && rect.top < vh + 160;
+
+          if (inProximity) {
+            const progress = Math.max(0, Math.min(1, (vh - rect.top) / (vh + rect.height)));
+            const centered = (progress - 0.5) * 2; // -1 to +1
+
+            if (c.isMenuCard) {
+              // Gentle overhanging circular plate rotation (-7deg to +7deg) & soft float
+              c.targetPlateRot = centered * 7 * c.indexDir;
+              c.targetPlateY = -centered * 7;
+
+              // In Grid mode, subtle sweet-spot elevation focus as rows glide past viewport center
+              if (state.layoutMode === 'grid') {
+                const distFromSweetSpot = Math.abs(progress - 0.5) * 2;
+                const sweetFocus = 1 - Math.min(1, distFromSweetSpot);
+                c.targetScrollY = -sweetFocus * 5.5;
+                c.targetScale = 0.992 + sweetFocus * 0.014;
+              }
+            } else if (c.depthStrength !== 0) {
+              // Subtle editorial depth float
+              c.targetScrollY = centered * c.depthStrength;
+              c.targetScale = 1;
+            }
+          }
+
+          // Apply silky exponential LERP damping
+          c.curRx += (c.targetRx - c.curRx) * TILT_DAMP;
+          c.curRy += (c.targetRy - c.curRy) * TILT_DAMP;
+          c.curScrollY += (c.targetScrollY - c.curScrollY) * SCROLL_DAMP;
+          c.curScale += (c.targetScale - c.curScale) * SCROLL_DAMP;
+
+          c.el.style.transform =
+            `perspective(1100px) translate3d(0, ${c.curScrollY.toFixed(2)}px, 0) rotateX(${c.curRx.toFixed(2)}deg) rotateY(${c.curRy.toFixed(2)}deg) scale(${c.curScale.toFixed(4)})`;
+
+          if (c.plateLerp) {
+            c.curPlateRot += (c.targetPlateRot - c.curPlateRot) * SCROLL_DAMP;
+            c.curPlateY += (c.targetPlateY - c.curPlateY) * SCROLL_DAMP;
+            c.plateLerp.style.transform =
+              `translate3d(0, ${c.curPlateY.toFixed(2)}px, 0) rotate(${c.curPlateRot.toFixed(2)}deg)`;
+          }
+        }
+
+        requestAnimationFrame(tick);
+      }
+
+      requestAnimationFrame(tick);
+    }
+
+    /* =======================================================================
+       6. SWIPE RAIL HORIZONTAL SCROLL-SNAP & CALM CENTER HIGHLIGHT
+       ======================================================================= */
+    let railScrollTick = false;
+
+    function updateSwipeRailTargets() {
+      railScrollTick = false;
+      if (state.layoutMode !== 'rail') return;
+
+      const rail = document.getElementById('menuGrid');
+      const cards = [...rail.querySelectorAll('.menu-card')];
+      if (!cards.length) return;
+
+      const railRect = rail.getBoundingClientRect();
+      const centerX = railRect.left + railRect.width / 2;
+
+      let closestCard = null;
+      let closestDist = Infinity;
+
+      cards.forEach((card) => {
+        const rect = card.getBoundingClientRect();
+        const dist = Math.abs((rect.left + rect.width / 2) - centerX);
+
+        if (dist < closestDist) {
+          closestDist = dist;
+          closestCard = card;
+        }
+
+        const cState = lerpCardsRegistry.get(card);
+        if (cState) {
+          const norm = Math.min(1, dist / (railRect.width * 0.52));
+          cState.targetScale = 1.015 - norm * 0.075;
+          cState.targetScrollY = -5 + norm * 9;
+        }
+      });
+
+      if (closestCard) {
+        const centeredId = Number(closestCard.dataset.itemId);
+        if (state.selectedCardId !== centeredId) {
+          setActiveMenuCard(centeredId);
+        }
+      }
+
+      const maxScroll = Math.max(1, rail.scrollWidth - rail.clientWidth);
+      const pct = Math.max(12, Math.min(100, (rail.scrollLeft / maxScroll) * 100));
+      const fill = document.getElementById('railProgressFill');
+      if (fill) fill.style.width = `${pct.toFixed(1)}%`;
+    }
+
+    function initSwipeRailDrag() {
+      const rail = document.getElementById('menuGrid');
+      let isDown = false;
+      let startX = 0;
+      let startScrollLeft = 0;
+      let lastX = 0;
+      let velocity = 0;
+      let draggedDist = 0;
+      let inertiaFrame = null;
+
+      rail.addEventListener('scroll', () => {
+        if (state.layoutMode === 'rail' && !railScrollTick) {
+          railScrollTick = true;
+          requestAnimationFrame(updateSwipeRailTargets);
+        }
+      }, { passive: true });
+
+      rail.addEventListener('pointerdown', (e) => {
+        if (state.layoutMode !== 'rail' || e.pointerType !== 'mouse') return;
+        if (e.target.closest('.quick-add-btn')) return;
+
+        isDown = true;
+        draggedDist = 0;
+        velocity = 0;
+        startX = e.clientX;
+        lastX = e.clientX;
+        startScrollLeft = rail.scrollLeft;
+        rail.classList.add('is-dragging');
+        if (inertiaFrame) cancelAnimationFrame(inertiaFrame);
+      });
+
+      window.addEventListener('pointermove', (e) => {
+        if (!isDown) return;
+        const dx = e.clientX - startX;
+        draggedDist = Math.abs(dx);
+        velocity = e.clientX - lastX;
+        lastX = e.clientX;
+        rail.scrollLeft = startScrollLeft - dx * 1.05;
+      });
+
+      const releaseRail = () => {
+        if (!isDown) return;
+        isDown = false;
+        rail.classList.remove('is-dragging');
+
+        if (draggedDist > 8) {
+          rail.dataset.recentDrag = 'true';
+          setTimeout(() => { rail.dataset.recentDrag = 'false'; }, 160);
+        }
+
+        // Weighted smooth inertia deceleration
+        const glide = () => {
+          if (Math.abs(velocity) < 0.35) {
+            updateSwipeRailTargets();
+            return;
+          }
+          rail.scrollLeft -= velocity;
+          velocity *= 0.935;
+          inertiaFrame = requestAnimationFrame(glide);
+        };
+        if (Math.abs(velocity) > 1.2) {
+          inertiaFrame = requestAnimationFrame(glide);
+        } else {
+          updateSwipeRailTargets();
+        }
+      };
+
+      window.addEventListener('pointerup', releaseRail);
+      window.addEventListener('pointercancel', releaseRail);
+    }
+
+    function setActiveMenuCard(itemId) {
+      state.selectedCardId = itemId;
+      document.querySelectorAll('#menuGrid .menu-card').forEach((card) => {
+        card.classList.toggle('menu-card--active', Number(card.dataset.itemId) === itemId);
+      });
+    }
+
+    function syncMenuCardBadges() {
+      document.querySelectorAll('#menuGrid .menu-card').forEach((card) => {
+        const qty = getCartItemCount(Number(card.dataset.itemId));
+        const badge = card.querySelector('.in-cart-badge');
+        if (!badge) return;
+        if (qty > 0) {
+          badge.textContent = `${qty} in order`;
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      });
+    }
+
+    /* =======================================================================
+       7. DYNAMIC MENU RENDERING & CALM RE-STAGGER ON FILTER / MODE CHANGE
+       ======================================================================= */
+    function renderCategoryTabs() {
+      const container = document.getElementById('categoryTabs');
+      container.innerHTML = MENU_CATEGORIES.map((cat) => {
+        const count = cat === 'All'
+          ? MENU_ITEMS.length
+          : MENU_ITEMS.filter((item) => item.category === cat).length;
+        const active = state.activeCategory === cat;
+        return `
+          <button
+            type="button"
+            data-category="${cat}"
+            class="category-tab-btn shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold transition-all duration-300 ${
+              active
+                ? 'bg-slatebase text-white shadow-md'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }"
+          >
+            <span>${cat}</span>
+            <span class="px-1.5 py-0.5 rounded-full text-[11px] ${
+              active ? 'bg-coral text-white' : 'bg-white text-slate-500'
+            }">${count}</span>
+          </button>
+        `;
+      }).join('');
+
+      container.querySelectorAll('.category-tab-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.activeCategory = btn.dataset.category;
+          renderCategoryTabs();
+          renderMenuGrid(true);
+        });
+      });
+    }
+
+    function setLayoutMode(mode) {
+      if (state.layoutMode === mode) return;
+      state.layoutMode = mode;
+
+      const grid = document.getElementById('menuGrid');
+      const gridBtn = document.getElementById('layoutGridBtn');
+      const railBtn = document.getElementById('layoutRailBtn');
+      const progressWrap = document.getElementById('railProgressBarWrap');
+      const hintEl = document.getElementById('menuInteractionHint');
+
+      if (mode === 'rail') {
+        grid.className = 'mt-8 menu-rail';
+        gridBtn.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slatebase transition-all duration-300';
+        railBtn.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-slatebase shadow-sm transition-all duration-300';
+        progressWrap.classList.remove('hidden');
+        hintEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-coral"></span><span>Swipe or drag plates horizontally • Double-tap to add</span>`;
+      } else {
+        grid.className = 'mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-20';
+        gridBtn.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-slatebase shadow-sm transition-all duration-300';
+        railBtn.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slatebase transition-all duration-300';
+        progressWrap.classList.add('hidden');
+        hintEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-coral"></span><span>Tap to customize • Double-tap or tap + to add</span>`;
+      }
+
+      // Calmly re-stagger the visible menu cards when switching layout modes
+      renderMenuGrid(true);
+    }
+
+    function getFilteredMenu() {
+      let list = [...MENU_ITEMS];
+
+      if (state.activeCategory !== 'All') {
+        list = list.filter((i) => i.category === state.activeCategory);
+      }
+
+      if (state.searchQuery.trim()) {
+        const q = state.searchQuery.toLowerCase().trim();
+        list = list.filter(
+          (i) =>
+            i.name.toLowerCase().includes(q) ||
+            i.description.toLowerCase().includes(q) ||
+            i.category.toLowerCase().includes(q) ||
+            i.ingredients.some((ing) => ing.toLowerCase().includes(q))
+        );
+      }
+
+      if (state.activeDiets.size > 0) {
+        list = list.filter((i) =>
+          [...state.activeDiets].every((diet) => i.tags.includes(diet))
+        );
+      }
+
+      list.sort((a, b) => Number(b.featured) - Number(a.featured));
+      return list;
+    }
+
+    /**
+     * Renders menu cards.
+     * @param {boolean} isInteractiveSwitch - True when user clicked a filter/layout tab (already in menu viewport),
+     *   triggers calm sequential stagger immediately; false on initial page load so cards wait for delayed scroll reveal.
+     */
+    function renderMenuGrid(isInteractiveSwitch = false) {
+      try {
+        const grid = document.getElementById('menuGrid');
+        const emptyState = document.getElementById('menuEmptyState');
+        const countEl = document.getElementById('menuResultCount');
+        const items = getFilteredMenu();
+
+        countEl.textContent = items.length;
+
+        if (items.length === 0) {
+          grid.innerHTML = '';
+          unregisterStaleMenuCards();
+          emptyState.classList.remove('hidden');
+          return;
+        }
+
+        emptyState.classList.add('hidden');
+
+        if (!items.some((i) => i.id === state.selectedCardId)) {
+          state.selectedCardId = items[Math.min(1, items.length - 1)].id;
+        }
+
+        grid.innerHTML = items.map((item, idx) => {
+          const isActive = item.id === state.selectedCardId;
+          const inCartQty = getCartItemCount(item.id);
+          const staggerPos = idx % 4;
+          const plateDir = idx % 2 === 0 ? 1 : -1;
+
+          const badgeHtml = item.tags.includes('spicy')
+            ? `<span class="menu-badge px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-600">🌶 Spicy</span>`
+            : item.tags.includes('vegan')
+            ? `<span class="menu-badge px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-600">🌿 Plant-Based</span>`
+            : item.tags.includes('chef')
+            ? `<span class="menu-badge px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700">★ Chef's Pick</span>`
+            : '';
+
+          return `
+            <div class="reveal-wrap" data-stagger="${staggerPos}">
+              <article
+                data-lerp-card
+                data-item-id="${item.id}"
+                data-plate-dir="${plateDir}"
+                class="luxury-card menu-card ${isActive ? 'menu-card--active' : ''} rounded-[28px] h-full cursor-pointer select-none"
+              >
+                <div class="card-press-shell pt-20 pb-6 px-6 text-center">
+                  <!-- Overhanging Circular Dish Plate (Delayed Float & Un-blur + Damped LERP Rotation) -->
+                  <div class="plate-reveal-wrap absolute -top-12 left-1/2 w-28 h-28 sm:w-[122px] sm:h-[122px] z-20 pointer-events-none">
+                    <div class="plate-lerp-layer">
+                      <div class="plate-rim w-full h-full rounded-full overflow-hidden bg-charcoal">
+                        <img
+                          src="${item.image}"
+                          alt="${item.name}"
+                          loading="lazy"
+                          draggable="false"
+                          onerror="this.onerror=null;this.src='https://placehold.co/300x300/14171c/ef4f27?text=${encodeURIComponent(item.category)}';"
+                          class="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- In-Cart Quantity Indicator -->
+                  <span class="in-cart-badge ${inCartQty > 0 ? '' : 'hidden'} absolute top-3.5 right-3.5 z-20 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slatebase text-white shadow-sm">
+                    ${inCartQty} in order
+                  </span>
+
+                  <!-- Dish Name & Metadata -->
+                  <div class="relative z-10">
+                    <div class="mb-2 min-h-[20px] flex items-center justify-center">
+                      ${badgeHtml}
+                    </div>
+                    <h3 class="text-base sm:text-[17px] font-bold leading-snug tracking-tight min-h-[46px] flex items-center justify-center">
+                      ${item.name}
+                    </h3>
+                    <div class="menu-divider mt-3 pt-3 border-t flex items-center justify-center gap-2 text-xs font-medium menu-meta">
+                      <span>${item.calories} calories</span>
+                      <span>•</span>
+                      <span>${item.serving}</span>
+                    </div>
+                  </div>
+
+                  <!-- Bottom Row: Bold Left-Aligned Price + Rounded-Square '+' Button -->
+                  <div class="relative z-10 mt-6 flex items-center justify-between">
+                    <span class="text-xl font-extrabold tracking-tight text-left">${formatCurrency(item.price)}</span>
+                    <button
+                      type="button"
+                      data-quick-add="${item.id}"
+                      aria-label="Quick add ${item.name}"
+                      class="quick-add-btn menu-plus-btn w-11 h-11 rounded-2xl flex items-center justify-center active:scale-95"
+                    >
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.6" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Warm Specular Sheen & Calm 900ms Ripple Layers -->
+                <div class="card-sheen"></div>
+                <div class="card-ripple-layer"></div>
+              </article>
+            </div>
+          `;
+        }).join('');
+
+        unregisterStaleMenuCards();
+
+        const wraps = [...grid.querySelectorAll('.reveal-wrap')];
+        wraps.forEach((wrap, idx) => {
+          const card = wrap.querySelector('.menu-card');
+          const itemId = Number(card.dataset.itemId);
+          registerLerpCard(card);
+
+          // Delayed Viewport Reveal vs Calm Filter/Mode Re-stagger
+          if (prefersReducedMotion) {
+            wrap.classList.add('is-revealed');
+          } else if (isInteractiveSwitch) {
+            // Smoothly stagger newly filtered or rail-toggled cards in view
+            const calmDelayIdx = state.layoutMode === 'rail' ? Math.min(idx, 5) : (idx % 4);
+            setTimeout(() => triggerRevealElement(wrap, calmDelayIdx), 40);
+          } else if (revealObserver) {
+            revealObserver.observe(wrap);
+          } else {
+            wrap.classList.add('is-revealed');
+          }
+
+          // Click & Double-Tap Interaction (Single tap highlights + opens customization; double-tap quick-adds)
+          let lastTapTime = 0;
+          let singleTapTimeout = null;
+
+          card.addEventListener('click', (e) => {
+            if (e.target.closest('.quick-add-btn')) return;
+            if (grid.dataset.recentDrag === 'true') return;
+
+            const now = Date.now();
+            if (now - lastTapTime < 280) {
+              clearTimeout(singleTapTimeout);
+              lastTapTime = 0;
+              setActiveMenuCard(itemId);
+              triggerHaptic(10);
+              quickAddById(itemId, card);
+              return;
+            }
+
+            lastTapTime = now;
+            setActiveMenuCard(itemId);
+
+            singleTapTimeout = setTimeout(() => {
+              openDishModal(itemId);
+            }, 220);
+          });
+        });
+
+        // Quick-add '+' buttons
+        grid.querySelectorAll('.quick-add-btn').forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = Number(btn.dataset.quickAdd);
+            setActiveMenuCard(id);
+            triggerHaptic(8);
+            quickAddById(id, btn);
+          });
+        });
+
+        if (state.layoutMode === 'rail') {
+          requestAnimationFrame(updateSwipeRailTargets);
+        }
+      } catch (err) {
+        console.error('Menu render error:', err);
+      }
+    }
+
+    /* =======================================================================
+       8. OMAKASE SPOTLIGHT WITH DAMPED DRAG & 900MS CALM CROSSFADE
+       ======================================================================= */
+    let omakaseSwitching = false;
+
+    function setOmakaseSlide(index) {
+      if (omakaseSwitching) return;
+      try {
+        const total = OMAKASE_COURSES.length;
+        const wrapped = ((index % total) + total) % total;
+        if (wrapped === state.omakaseSlide) return;
+
+        omakaseSwitching = true;
+        state.omakaseSlide = wrapped;
+        const course = OMAKASE_COURSES[wrapped];
+
+        const imgEl = document.getElementById('omakasePlateImg');
+        const textFade = document.getElementById('omakaseTextFade');
+
+        imgEl.classList.add('is-transitioning');
+        textFade.classList.add('is-transitioning');
+
+        setTimeout(() => {
+          imgEl.src = course.image;
+          document.getElementById('omakaseCourseTag').textContent = course.tag;
+          document.getElementById('omakaseCourseMeta').textContent = course.meta;
+          document.getElementById('omakaseCourseTitle').textContent = course.title;
+          document.getElementById('omakaseCourseDesc').textContent = course.desc;
+
+          requestAnimationFrame(() => {
+            imgEl.classList.remove('is-transitioning');
+            textFade.classList.remove('is-transitioning');
+          });
+          setTimeout(() => { omakaseSwitching = false; }, 450);
+        }, 360);
+
+        document.querySelectorAll('.omakase-dot').forEach((dot) => {
+          const isCurrent = Number(dot.dataset.slide) === wrapped;
+          dot.className = isCurrent
+            ? 'omakase-dot w-9 h-2 rounded-full bg-coral transition-all duration-500'
+            : 'omakase-dot w-2.5 h-2 rounded-full bg-white/30 hover:bg-white/60 transition-all duration-500';
+        });
+      } catch (err) {
+        omakaseSwitching = false;
+        console.error('Omakase switch error:', err);
+      }
+    }
+
+    function initOmakaseDampedSwipe() {
+      const swipeArea = document.getElementById('omakaseSwipeArea');
+      const dragStage = document.getElementById('omakaseDragStage');
+      const plateRing = document.getElementById('omakasePlateRing');
+      if (!swipeArea || !dragStage) return;
+
+      let active = false;
+      let startX = 0;
+      let startY = 0;
+      let deltaX = 0;
+      let lockedAxis = null;
+      let curDragX = 0;
+      let targetDragX = 0;
+
+      // Damped drag visual loop
+      function dragLoop() {
+        if (!prefersReducedMotion) {
+          curDragX += (targetDragX - curDragX) * 0.085;
+          if (Math.abs(curDragX) > 0.08 || Math.abs(targetDragX) > 0.08) {
+            dragStage.style.transform = `translate3d(${curDragX.toFixed(2)}px, 0, 0)`;
+            if (plateRing) {
+              plateRing.style.transform = `rotate(${(curDragX * 0.1).toFixed(2)}deg)`;
+            }
+          }
+        }
+        requestAnimationFrame(dragLoop);
+      }
+      requestAnimationFrame(dragLoop);
+
+      const onStart = (x, y, target) => {
+        if (target.closest('a, button')) return;
+        active = true;
+        startX = x;
+        startY = y;
+        deltaX = 0;
+        lockedAxis = null;
+        dragStage.classList.add('is-swiping');
+      };
+
+      const onMove = (x, y) => {
+        if (!active) return;
+        const dx = x - startX;
+        const dy = y - startY;
+
+        if (!lockedAxis && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
+          lockedAxis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+        }
+        if (lockedAxis !== 'x') return;
+
+        deltaX = dx;
+        targetDragX = Math.sign(dx) * Math.min(72, Math.abs(dx) * 0.4);
+      };
+
+      const onEnd = () => {
+        if (!active) return;
+        active = false;
+        dragStage.classList.remove('is-swiping');
+        targetDragX = 0;
+
+        if (lockedAxis === 'x' && Math.abs(deltaX) > 52) {
+          triggerHaptic(8);
+          if (deltaX < 0) setOmakaseSlide(state.omakaseSlide + 1);
+          else setOmakaseSlide(state.omakaseSlide - 1);
+        }
+      };
+
+      swipeArea.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'mouse') onStart(e.clientX, e.clientY, e.target);
+      });
+      window.addEventListener('pointermove', (e) => {
+        if (e.pointerType === 'mouse') onMove(e.clientX, e.clientY);
+      });
+      window.addEventListener('pointerup', (e) => {
+        if (e.pointerType === 'mouse') onEnd();
+      });
+
+      swipeArea.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) onStart(e.touches[0].clientX, e.touches[0].clientY, e.target);
+      }, { passive: true });
+      swipeArea.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 1) onMove(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
+      swipeArea.addEventListener('touchend', onEnd, { passive: true });
+      swipeArea.addEventListener('touchcancel', onEnd, { passive: true });
+    }
+
+    /* =======================================================================
+       9. DISH CUSTOMIZATION MODAL
+       ======================================================================= */
+    let modalState = {
+      itemId: null,
+      spice: 'Mild',
+      addons: new Set(),
+      qty: 1,
+    };
+
+    function openDishModal(itemId) {
+      const item = MENU_ITEMS.find((i) => i.id === itemId);
+      if (!item) return;
+
+      modalState = {
+        itemId,
+        spice: item.tags.includes('spicy') ? 'Medium' : 'None',
+        addons: new Set(),
+        qty: 1,
+      };
+
+      renderDishModal(item);
+      const modal = document.getElementById('dishModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.body.classList.add('overflow-hidden');
+    }
+
+    function closeDishModal() {
+      const modal = document.getElementById('dishModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.body.classList.remove('overflow-hidden');
+    }
+
+    function getModalUnitPrice(item) {
+      let extra = 0;
+      modalState.addons.forEach((aid) => {
+        const found = ADDONS_LIST.find((a) => a.id === aid);
+        if (found) extra += found.price;
+      });
+      return item.price + extra;
+    }
+
+    function renderDishModal(item) {
+      const container = document.getElementById('dishModalContent');
+      const unitPrice = getModalUnitPrice(item);
+      const lineTotal = unitPrice * modalState.qty;
+      const spiceLevels = ['None', 'Mild', 'Medium', 'Fire'];
+
+      container.innerHTML = `
+        <div class="relative h-52 bg-slatebase shrink-0">
+          <img
+            src="${item.image}"
+            alt="${item.name}"
+            onerror="this.onerror=null;this.src='https://placehold.co/600x350/14171c/ef4f27?text=${encodeURIComponent(item.name)}';"
+            class="w-full h-full object-cover"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-slatebase/90 via-slatebase/25 to-transparent"></div>
+          <button type="button" onclick="closeDishModal()" aria-label="Close dish modal" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-slatebase/75 hover:bg-slatebase text-white flex items-center justify-center backdrop-blur-md transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+          <div class="absolute bottom-4 left-6 right-6 text-white">
+            <div class="flex items-center gap-2 text-[11px] font-bold text-amber-300 uppercase tracking-wider">
+              <span>${item.category}</span>
+              <span>•</span>
+              <span>${item.calories} calories</span>
+              <span>•</span>
+              <span>${item.serving}</span>
+            </div>
+            <h3 class="font-serif text-2xl font-semibold mt-0.5">${item.name}</h3>
+          </div>
+        </div>
+
+        <div class="p-6 overflow-y-auto space-y-5 flex-1">
+          <p class="font-body text-sm text-slate-600 leading-relaxed">${item.description}</p>
+
+          <div>
+            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Ingredients</p>
+            <div class="flex flex-wrap gap-1.5">
+              ${item.ingredients.map((ing) => `<span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">${ing}</span>`).join('')}
+            </div>
+          </div>
+
+          <div>
+            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Spice Level</p>
+            <div class="grid grid-cols-4 gap-2">
+              ${spiceLevels.map((lvl) => `
+                <button
+                  type="button"
+                  data-spice="${lvl}"
+                  class="modal-spice-btn py-2 rounded-xl text-xs font-bold border transition-all duration-300 ${
+                    modalState.spice === lvl
+                      ? 'bg-slatebase text-white border-slatebase'
+                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-400'
+                  }"
+                >${lvl}</button>
+              `).join('')}
+            </div>
+          </div>
+
+          <div>
+            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Artisanal Add-Ons</p>
+            <div class="space-y-2">
+              ${ADDONS_LIST.map((addon) => {
+                const checked = modalState.addons.has(addon.id);
+                return `
+                  <label class="flex items-center justify-between p-3 rounded-2xl border cursor-pointer transition-colors duration-300 ${
+                    checked ? 'border-coral bg-coral-soft/60' : 'border-slate-200 hover:bg-slate-50'
+                  }">
+                    <div class="flex items-center gap-3">
+                      <input type="checkbox" data-addon="${addon.id}" ${checked ? 'checked' : ''} class="modal-addon-cb w-4 h-4 accent-coral rounded" />
+                      <span class="text-sm font-semibold text-slatebase">${addon.label}</span>
+                    </div>
+                    <span class="text-xs font-bold text-slate-500">${addon.price > 0 ? '+' + formatCurrency(addon.price) : 'Complimentary'}</span>
+                  </label>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div class="p-5 border-t border-slate-100 bg-slate-50 flex items-center gap-3 shrink-0">
+          <div class="flex items-center gap-3 bg-white border border-slate-200 rounded-full px-3 py-2">
+            <button id="modalQtyDec" type="button" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 font-bold text-slatebase flex items-center justify-center">−</button>
+            <span class="w-5 text-center font-bold text-sm">${modalState.qty}</span>
+            <button id="modalQtyInc" type="button" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 font-bold text-slatebase flex items-center justify-center">+</button>
+          </div>
+          <button id="modalAddCartBtn" type="button" class="flex-1 py-3.5 px-5 rounded-full bg-coral hover:bg-coral-hover text-white font-semibold text-sm shadow-lg shadow-coral/25 transition-all duration-300 active:scale-95">
+            Add to Order • ${formatCurrency(lineTotal)}
+          </button>
+        </div>
+      `;
+
+      container.querySelectorAll('.modal-spice-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          modalState.spice = btn.dataset.spice;
+          renderDishModal(item);
+        });
+      });
+
+      container.querySelectorAll('.modal-addon-cb').forEach((cb) => {
+        cb.addEventListener('change', () => {
+          if (cb.checked) modalState.addons.add(cb.dataset.addon);
+          else modalState.addons.delete(cb.dataset.addon);
+          renderDishModal(item);
+        });
+      });
+
+      document.getElementById('modalQtyDec').addEventListener('click', () => {
+        if (modalState.qty > 1) {
+          modalState.qty--;
+          renderDishModal(item);
+        }
+      });
+
+      document.getElementById('modalQtyInc').addEventListener('click', () => {
+        modalState.qty++;
+        renderDishModal(item);
+      });
+
+      document.getElementById('modalAddCartBtn').addEventListener('click', (e) => {
+        const addonLabels = [...modalState.addons]
+          .map((id) => ADDONS_LIST.find((a) => a.id === id)?.label)
+          .filter(Boolean);
+
+        addToCart({
+          itemId: item.id,
+          name: item.name,
+          price: getModalUnitPrice(item),
+          image: item.image,
+          spice: modalState.spice,
+          addons: addonLabels,
+          qty: modalState.qty,
+        }, e.currentTarget);
+        closeDishModal();
+      });
+    }
+
+    /* =======================================================================
+       10. CART DRAWER LOGIC & ORDER RECEIPT
+       ======================================================================= */
+    function quickAddById(itemId, sourceEl = null) {
+      const item = MENU_ITEMS.find((i) => i.id === itemId);
+      if (!item) return;
+
+      addToCart({
+        itemId: item.id,
+        name: item.name,
+        price: item.price,
+        image: item.image,
+        spice: item.tags.includes('spicy') ? 'Medium' : 'None',
+        addons: [],
+        qty: 1,
+      }, sourceEl);
+    }
+
+    function addToCart(payload, sourceEl = null) {
+      try {
+        const cartKey = `${payload.itemId}__${payload.spice}__${payload.addons.join(',')}`;
+        const existing = state.cart.find((c) => c.cartKey === cartKey);
+
+        if (existing) {
+          existing.qty += payload.qty;
+        } else {
+          state.cart.push({ ...payload, cartKey });
+        }
+
+        if (sourceEl) animateFlyToCart(sourceEl, payload.image);
+
+        updateCartUI();
+        syncMenuCardBadges();
+        showToast(`Added ${payload.qty}× ${payload.name} to your order`);
+      } catch (err) {
+        console.error('Cart add error:', err);
+      }
+    }
+
+    function updateCartQty(cartKey, delta) {
+      const idx = state.cart.findIndex((c) => c.cartKey === cartKey);
+      if (idx === -1) return;
+
+      state.cart[idx].qty += delta;
+      if (state.cart[idx].qty <= 0) {
+        state.cart.splice(idx, 1);
+      }
+      updateCartUI();
+      syncMenuCardBadges();
+    }
+
+    function calculateTotals() {
+      const subtotal = state.cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+      const discount = state.promoApplied ? subtotal * 0.15 : 0;
+      const afterDiscount = Math.max(0, subtotal - discount);
+      const deliveryFee = state.fulfillmentMode === 'delivery' && state.cart.length > 0 ? 4.50 : 0;
+      const tax = afterDiscount * 0.08;
+      const grandTotal = afterDiscount + tax + deliveryFee;
+      const totalItems = state.cart.reduce((sum, item) => sum + item.qty, 0);
+      return { subtotal, discount, deliveryFee, tax, grandTotal, totalItems };
+    }
+
+    function updateCartUI() {
+      const { subtotal, discount, deliveryFee, tax, grandTotal, totalItems } = calculateTotals();
+
+      document.getElementById('navCartCount').textContent = totalItems;
+      document.getElementById('topUtilCartCount').textContent = totalItems;
+
+      const floatBar = document.getElementById('floatingCartBar');
+      document.getElementById('floatCartCount').textContent = totalItems;
+      document.getElementById('floatCartSummary').textContent = `${totalItems} ${totalItems === 1 ? 'dish' : 'dishes'} selected`;
+      document.getElementById('floatCartTotal').textContent = formatCurrency(grandTotal);
+
+      if (totalItems > 0) {
+        floatBar.classList.remove('translate-y-28', 'opacity-0', 'pointer-events-none');
+      } else {
+        floatBar.classList.add('translate-y-28', 'opacity-0', 'pointer-events-none');
+      }
+
+      const container = document.getElementById('cartItemsContainer');
+      const checkoutBtn = document.getElementById('checkoutBtn');
+
+      if (state.cart.length === 0) {
+        checkoutBtn.disabled = true;
+        container.innerHTML = `
+          <div class="py-16 text-center space-y-3">
+            <div class="w-16 h-16 mx-auto rounded-3xl bg-slate-100 text-slate-400 flex items-center justify-center">
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z"/></svg>
+            </div>
+            <p class="font-bold text-slatebase">Your order is empty</p>
+            <p class="text-xs text-slate-500 max-w-xs mx-auto">Tap + or double-tap any plate in our seasonal menu to compose your meal.</p>
+          </div>
+        `;
+      } else {
+        checkoutBtn.disabled = false;
+        container.innerHTML = state.cart.map((item) => `
+          <div class="flex items-center gap-3.5 p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
+            <img
+              src="${item.image}"
+              alt="${item.name}"
+              onerror="this.onerror=null;this.src='https://placehold.co/100x100/14171c/ef4f27?text=Dish';"
+              class="w-16 h-16 rounded-2xl object-cover shrink-0 shadow-sm"
+            />
+            <div class="flex-1 min-w-0">
+              <h4 class="text-sm font-bold text-slatebase truncate">${item.name}</h4>
+              <p class="text-[11px] text-slate-500 truncate">
+                ${item.spice !== 'None' ? `Spice: ${item.spice}` : 'Classic preparation'}
+                ${item.addons.length ? ' • ' + item.addons.join(', ') : ''}
+              </p>
+              <p class="text-sm font-bold text-coral mt-1">${formatCurrency(item.price * item.qty)}</p>
+            </div>
+            <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-2 py-1">
+              <button type="button" onclick="updateCartQty('${item.cartKey.replace(/'/g, "\\'")}', -1)" class="w-6 h-6 rounded-lg hover:bg-slate-100 font-bold text-slate-700">−</button>
+              <span class="text-xs font-bold w-4 text-center">${item.qty}</span>
+              <button type="button" onclick="updateCartQty('${item.cartKey.replace(/'/g, "\\'")}', 1)" class="w-6 h-6 rounded-lg hover:bg-slate-100 font-bold text-slate-700">+</button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      const promoBadge = document.getElementById('activePromoBadge');
+      const discountRow = document.getElementById('cartDiscountRow');
+      const deliveryRow = document.getElementById('cartDeliveryRow');
+
+      promoBadge.classList.toggle('hidden', !state.promoApplied);
+      promoBadge.classList.toggle('flex', state.promoApplied);
+
+      if (state.promoApplied && discount > 0) {
+        discountRow.classList.remove('hidden');
+        discountRow.classList.add('flex');
+        document.getElementById('cartDiscount').textContent = '-' + formatCurrency(discount);
+      } else {
+        discountRow.classList.add('hidden');
+        discountRow.classList.remove('flex');
+      }
+
+      deliveryRow.classList.toggle('hidden', deliveryFee <= 0);
+      deliveryRow.classList.toggle('flex', deliveryFee > 0);
+
+      document.getElementById('cartSubtotal').textContent = formatCurrency(subtotal);
+      document.getElementById('cartTax').textContent = formatCurrency(tax);
+      document.getElementById('cartGrandTotal').textContent = formatCurrency(grandTotal);
+    }
+
+    function openCart() {
+      const backdrop = document.getElementById('cartDrawerBackdrop');
+      const panel = document.getElementById('cartDrawerPanel');
+      backdrop.classList.remove('hidden');
+      requestAnimationFrame(() => panel.classList.remove('translate-x-full'));
+      document.body.classList.add('overflow-hidden');
+    }
+
+    function closeCart() {
+      const backdrop = document.getElementById('cartDrawerBackdrop');
+      const panel = document.getElementById('cartDrawerPanel');
+      panel.classList.add('translate-x-full');
+      setTimeout(() => {
+        backdrop.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+      }, 420);
+    }
+
+    function showConfirmation(title, message, metaLines = []) {
+      document.getElementById('confirmTitle').textContent = title;
+      document.getElementById('confirmMessage').textContent = message;
+      document.getElementById('confirmMeta').innerHTML = metaLines
+        .map((line) => `<p class="flex items-center justify-between gap-3"><span>${line.label}</span><strong class="text-slatebase text-right">${line.value}</strong></p>`)
+        .join('');
+      const modal = document.getElementById('confirmModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeConfirmation() {
+      const modal = document.getElementById('confirmModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    /* =======================================================================
+       11. BOOTSTRAP & EVENT WIRING
+       ======================================================================= */
+    document.addEventListener('DOMContentLoaded', () => {
+      // Calm initial Hero entrance choreography
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          document.body.classList.add('hero-ready');
+        }, 80);
+      });
+
+      // Default reservation date = today
+      const dateInput = document.getElementById('resDate');
+      if (dateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today;
+        dateInput.min = today;
+      }
+
+      // Initialize Delayed Viewport Reveal Observer & Register Static Editorial Cards
+      initDelayedRevealObserver();
+      document.querySelectorAll('[data-lerp-card]').forEach(registerLerpCard);
+
+      // Render Dynamic Menu (cards register with delayed reveal observer on initial load)
+      renderCategoryTabs();
+      renderMenuGrid(false);
+      updateCartUI();
+
+      // Launch Damped LERP Scroll/Tilt Loop, Swipe Rail Drag & Damped Omakase Swipe
+      startLuxuryLerpLoop();
+      initSwipeRailDrag();
+      initOmakaseDampedSwipe();
+
+      // Layout Mode Toggle (Grid vs. Swipe Rail)
+      document.getElementById('layoutGridBtn').addEventListener('click', () => setLayoutMode('grid'));
+      document.getElementById('layoutRailBtn').addEventListener('click', () => setLayoutMode('rail'));
+
+      // Swipe Rail Controls
+      document.getElementById('railPrevBtn').addEventListener('click', () => {
+        document.getElementById('menuGrid').scrollBy({ left: -310, behavior: 'smooth' });
+      });
+      document.getElementById('railNextBtn').addEventListener('click', () => {
+        document.getElementById('menuGrid').scrollBy({ left: 310, behavior: 'smooth' });
+      });
+
+      // Mobile Navigation Toggle
+      const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+      const mobileNav = document.getElementById('mobileNav');
+      mobileMenuBtn.addEventListener('click', () => mobileNav.classList.toggle('hidden'));
+      document.querySelectorAll('.mobile-nav-link').forEach((link) => {
+        link.addEventListener('click', () => mobileNav.classList.add('hidden'));
+      });
+
+      // Menu Search Input
+      document.getElementById('menuSearchInput').addEventListener('input', (e) => {
+        state.searchQuery = e.target.value;
+        renderMenuGrid(true);
+      });
+
+      // Dietary Filter Chips
+      document.querySelectorAll('.diet-filter-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const diet = btn.dataset.diet;
+          if (state.activeDiets.has(diet)) {
+            state.activeDiets.delete(diet);
+            btn.classList.remove('bg-coral', 'text-white');
+            btn.classList.add('bg-slate-100', 'text-slate-600');
+          } else {
+            state.activeDiets.add(diet);
+            btn.classList.remove('bg-slate-100', 'text-slate-600');
+            btn.classList.add('bg-coral', 'text-white');
+          }
+          renderMenuGrid(true);
+        });
+      });
+
+      // Reset Menu Filters
+      document.getElementById('resetFiltersBtn').addEventListener('click', () => {
+        state.activeCategory = 'All';
+        state.searchQuery = '';
+        state.activeDiets.clear();
+        document.getElementById('menuSearchInput').value = '';
+        document.querySelectorAll('.diet-filter-btn').forEach((btn) => {
+          btn.classList.remove('bg-coral', 'text-white');
+          btn.classList.add('bg-slate-100', 'text-slate-600');
+        });
+        renderCategoryTabs();
+        renderMenuGrid(true);
+      });
+
+      // Omakase Pagination Dots
+      document.querySelectorAll('.omakase-dot').forEach((dot) => {
+        dot.addEventListener('click', () => setOmakaseSlide(Number(dot.dataset.slide)));
+      });
+
+      // Floating Promo Bar CTA (Copies & Applies DEMO15)
+      document.getElementById('claimPromoBtn').addEventListener('click', () => {
+        copyTextFallback('DEMO15');
+        state.promoApplied = true;
+        document.getElementById('promoInput').value = 'DEMO15';
+        updateCartUI();
+        triggerHaptic(8);
+        showToast('Code DEMO15 copied & 15% discount applied');
+      });
+
+      // Cart Drawer Open / Close
+      document.getElementById('closeCartBtn').addEventListener('click', closeCart);
+      document.getElementById('cartDrawerBackdrop').addEventListener('click', (e) => {
+        if (e.target.id === 'cartDrawerBackdrop') closeCart();
+      });
+
+      // Fulfillment Mode Switcher
+      document.querySelectorAll('.fulfillment-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.fulfillmentMode = btn.dataset.mode;
+          document.querySelectorAll('.fulfillment-btn').forEach((b) => {
+            const active = b.dataset.mode === state.fulfillmentMode;
+            b.className = active
+              ? 'fulfillment-btn py-2 rounded-xl bg-white text-slatebase shadow-sm transition-all duration-300'
+              : 'fulfillment-btn py-2 rounded-xl text-slate-500 hover:text-slatebase transition-all duration-300';
+          });
+          document.getElementById('dineinDetailBox').classList.toggle('hidden', state.fulfillmentMode !== 'dinein');
+          document.getElementById('pickupDetailBox').classList.toggle('hidden', state.fulfillmentMode !== 'pickup');
+          document.getElementById('deliveryDetailBox').classList.toggle('hidden', state.fulfillmentMode !== 'delivery');
+          updateCartUI();
+        });
+      });
+
+      // Promo Code Apply / Remove
+      document.getElementById('applyPromoBtn').addEventListener('click', () => {
+        const code = document.getElementById('promoInput').value.trim().toUpperCase();
+        if (code === 'DEMO15') {
+          state.promoApplied = true;
+          updateCartUI();
+          showToast('Promo code DEMO15 applied — 15% off');
+        } else {
+          showToast('Invalid promo code. Try DEMO15 for 15% off.', 'error');
+        }
+      });
+
+      document.getElementById('removePromoBtn').addEventListener('click', () => {
+        state.promoApplied = false;
+        document.getElementById('promoInput').value = '';
+        updateCartUI();
+        showToast('Promo code removed');
+      });
+
+      // Send Order to Kitchen
+      document.getElementById('checkoutBtn').addEventListener('click', () => {
+        if (state.cart.length === 0) return;
+
+        const { grandTotal, totalItems } = calculateTotals();
+        const orderId = 'RD-' + Math.floor(1000 + Math.random() * 9000);
+        const modeLabel = state.fulfillmentMode === 'dinein'
+          ? `Dine-In (${document.getElementById('tableNumberInput').value || 'Table 07'})`
+          : state.fulfillmentMode === 'pickup'
+          ? 'Express Counter Pickup'
+          : `Delivery (${document.getElementById('deliveryAddressInput').value || 'SoHo'})`;
+        const etaLabel = state.fulfillmentMode === 'delivery' ? '30 – 40 mins' : '15 – 20 mins';
+
+        closeCart();
+        showConfirmation(
+          'Order Sent to Kitchen',
+          'Our chefs at Restaurant Demo have received your order and begun preparing each plate fresh.',
+          [
+            { label: 'Receipt ID', value: `#${orderId}` },
+            { label: 'Fulfillment', value: modeLabel },
+            { label: 'Items Ordered', value: `${totalItems} ${totalItems === 1 ? 'dish' : 'dishes'}` },
+            { label: 'Estimated Prep', value: etaLabel },
+            { label: 'Total', value: formatCurrency(grandTotal) },
+          ]
+        );
+
+        state.cart = [];
+        state.promoApplied = false;
+        document.getElementById('promoInput').value = '';
+        updateCartUI();
+        syncMenuCardBadges();
+      });
+
+      // Reservation Time-Slot Pills
+      document.querySelectorAll('.time-slot-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.selectedTimeSlot = btn.dataset.time;
+          document.querySelectorAll('.time-slot-btn').forEach((b) => {
+            const active = b.dataset.time === state.selectedTimeSlot;
+            b.className = active
+              ? 'time-slot-btn py-2.5 rounded-xl text-xs font-bold border border-coral bg-coral text-white shadow-sm transition-colors duration-300'
+              : 'time-slot-btn py-2.5 rounded-xl text-xs font-bold border border-slate-200 bg-slate-50 text-slate-700 hover:border-coral transition-colors duration-300';
+          });
+        });
+      });
+
+      // Reservation Form Submission
+      document.getElementById('reservationForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const guestName = document.getElementById('resName').value.trim();
+        const guests = document.getElementById('resGuests').value;
+        const dateVal = document.getElementById('resDate').value;
+        const seating = document.getElementById('resSeating').value;
+        const passCode = 'PASS-' + Math.floor(10000 + Math.random() * 90000);
+
+        showConfirmation(
+          'Reservation Pass Confirmed',
+          `We look forward to hosting you at Restaurant Demo, ${guestName}. Present this pass to our host upon arrival.`,
+          [
+            { label: 'Pass Code', value: passCode },
+            { label: 'Guest', value: guestName },
+            { label: 'Party & Seating', value: `${guests} • ${seating}` },
+            { label: 'Date & Time', value: `${dateVal} at ${state.selectedTimeSlot}` },
+            { label: 'Concierge', value: 'hello@restaurantdemo.com' },
+          ]
+        );
+        e.target.reset();
+        if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+      });
+
+      // Modal Close & Escape Handlers
+      document.getElementById('closeConfirmBtn').addEventListener('click', closeConfirmation);
+      document.getElementById('dishModal').addEventListener('click', (e) => {
+        if (e.target.id === 'dishModal') closeDishModal();
+      });
+      document.getElementById('confirmModal').addEventListener('click', (e) => {
+        if (e.target.id === 'confirmModal') closeConfirmation();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeDishModal();
+          closeCart();
+          closeConfirmation();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
